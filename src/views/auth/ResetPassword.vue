@@ -7,20 +7,16 @@ import * as z from 'zod'
 import { useForm } from 'vee-validate'
 import FormMessage from '@/components/ui/form/FormMessage.vue'
 import { Card, CardContent } from '@/components/ui/card'
-import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import { useTitle } from '@vueuse/core'
+import { ArrowLeft } from 'lucide-vue-next'
+import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 
-useTitle('CareerCompass - Sign up')
+useTitle('CareerCompass - Reset password')
 
 const validationSchema = toTypedSchema(
   z
     .object({
-      firstName: z.string({ required_error: 'Please enter your first name' }),
-      lastName: z.string({ required_error: 'Please enter your last name' }),
-      email: z
-        .string({ required_error: 'Please enter your email' })
-        .email('Please enter a valid email'),
       password: z
         .string({ required_error: 'Please enter your password' })
         .min(
@@ -48,39 +44,10 @@ const handleSubmit = form.handleSubmit((values) => {
 </script>
 
 <template>
-  <AuthLayout title="Sign up to CareerCompass">
+  <AuthLayout title="Create a new password" subtitle="Set a new password to regain your account">
     <Card>
       <CardContent>
         <form class="flex flex-col gap-y-4" @submit="handleSubmit">
-          <div class="flex gap-x-4">
-            <FormField name="firstName" v-slot="{ componentField }">
-              <FormItem class="w-full">
-                <FormLabel>First name</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Enter your first name" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-            <FormField name="lastName" v-slot="{ componentField }">
-              <FormItem class="w-full">
-                <FormLabel>Last name</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="Enter your last name" v-bind="componentField" />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            </FormField>
-          </div>
-          <FormField name="email" v-slot="{ componentField }">
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="Enter your email" v-bind="componentField" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
           <FormField name="password" v-slot="{ componentField }">
             <FormItem>
               <FormLabel>Password</FormLabel>
@@ -94,16 +61,22 @@ const handleSubmit = form.handleSubmit((values) => {
             <FormItem>
               <FormLabel>Confirm password</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="Confirm your password" v-bind="componentField" />
+                <Input
+                  type="password"
+                  placeholder="Confirm your password"
+                  v-bind="componentField"
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           </FormField>
-          <Button type="submit">Sign up</Button>
-          <p class="text-center text-sm text-slate-500">
-            Already have an account?
-            <RouterLink class="text-foreground font-semibold hover:underline" to="/sign-in">Sign in</RouterLink>
-          </p>
+          <Button type="submit">Submit</Button>
+          <RouterLink
+            class="text-foreground flex items-center gap-x-0.5 text-sm font-semibold hover:underline"
+            to="/sign-in"
+          >
+            <ArrowLeft class="size-4" /> Back to sign in
+          </RouterLink>
         </form>
       </CardContent>
     </Card>
