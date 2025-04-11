@@ -7,20 +7,17 @@ import * as z from 'zod'
 import { useForm } from 'vee-validate'
 import FormMessage from '@/components/ui/form/FormMessage.vue'
 import { Card, CardContent } from '@/components/ui/card'
-import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import { useTitle } from '@vueuse/core'
+import { ArrowLeft } from 'lucide-vue-next'
 
-useTitle('CareerCompass - Sign in')
+useTitle('CareerCompass - Forgot password')
 
 const validationSchema = toTypedSchema(
   z.object({
     email: z
       .string({ required_error: 'Please enter your email' })
       .email('Please enter a valid email'),
-    password: z
-      .string({ required_error: 'Please enter your password' })
-      .min(MIN_PASSWORD_LENGTH, `Password must be at least ${MIN_PASSWORD_LENGTH} characters long`),
   }),
 )
 
@@ -32,7 +29,10 @@ const handleSubmit = form.handleSubmit((values) => {
 </script>
 
 <template>
-  <AuthLayout title="Sign in to CareerCompass">
+  <AuthLayout
+    title="Reset your password"
+    subtitle="Enter your email to receive a password reset link"
+  >
     <Card>
       <CardContent>
         <form class="flex flex-col gap-y-4" @submit="handleSubmit">
@@ -45,25 +45,13 @@ const handleSubmit = form.handleSubmit((values) => {
               <FormMessage />
             </FormItem>
           </FormField>
-          <FormField name="password" v-slot="{ componentField }">
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Enter your password" v-bind="componentField" />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          </FormField>
-          <RouterLink class="ml-auto text-sm font-semibold hover:underline" to="/forgot-password"
-            >Forgot password?
+          <Button type="submit">Send</Button>
+          <RouterLink
+            class="text-foreground flex items-center gap-x-2 text-sm font-semibold hover:underline"
+            to="/sign-in"
+          >
+            <ArrowLeft class="size-4" /> Back to sign in
           </RouterLink>
-          <Button type="submit"> Sign in </Button>
-          <p class="text-center text-sm text-slate-500">
-            Don’t have an account?
-            <RouterLink class="text-foreground font-semibold hover:underline" to="/sign-up"
-              >Sign up</RouterLink
-            >
-          </p>
         </form>
       </CardContent>
     </Card>
