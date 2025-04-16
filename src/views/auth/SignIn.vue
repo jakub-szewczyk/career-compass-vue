@@ -10,8 +10,13 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import { useTitle } from '@vueuse/core'
+import { useMutation } from '@tanstack/vue-query'
+import { signIn } from '@/services/auth'
+import { Loader2 } from 'lucide-vue-next'
 
 useTitle('CareerCompass - Sign in')
+
+const { mutate, isPending } = useMutation({ mutationFn: signIn })
 
 const validationSchema = toTypedSchema(
   z.object({
@@ -26,9 +31,7 @@ const validationSchema = toTypedSchema(
 
 const form = useForm({ validationSchema })
 
-const handleSubmit = form.handleSubmit((values) => {
-  console.log('values', values)
-})
+const handleSubmit = form.handleSubmit((values) => mutate(values))
 </script>
 
 <template>
@@ -57,7 +60,10 @@ const handleSubmit = form.handleSubmit((values) => {
           <RouterLink class="ml-auto text-sm font-semibold hover:underline" to="/forgot-password"
             >Forgot password?
           </RouterLink>
-          <Button type="submit"> Sign in </Button>
+          <Button type="submit" :disabled="isPending">
+            <Loader2 class="mr-2 h-4 w-4 animate-spin" v-if="isPending" />
+            Sign in
+          </Button>
           <p class="text-center text-sm text-slate-500">
             Don’t have an account?
             <RouterLink class="text-foreground font-semibold hover:underline" to="/sign-up"

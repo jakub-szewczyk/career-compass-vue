@@ -24,7 +24,7 @@ defineProps({
           <h1 class="text-xl font-semibold">{{ title }}</h1>
           <p>{{ subtitle }}</p>
         </div>
-        <slot></slot>
+        <slot />
       </div>
       <p class="px-4 pb-4 text-center text-xs text-slate-500 lg:px-6 lg:pb-6">
         Your next opportunity is just a step away. Let's chart the path together.
