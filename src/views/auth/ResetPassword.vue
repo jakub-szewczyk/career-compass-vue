@@ -73,7 +73,7 @@ const handleSubmit = form.handleSubmit((values) => {
           </FormField>
           <Button type="submit">Submit</Button>
           <RouterLink
-            class="text-foreground flex items-center gap-x-0.5 text-sm font-semibold hover:underline"
+            class="text-foreground flex items-center gap-x-2 text-sm font-semibold hover:underline"
             :to="ROUTES.SIGN_IN.path"
           >
             <ArrowLeft class="size-4" /> Back to sign in

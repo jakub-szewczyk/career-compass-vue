@@ -3,6 +3,7 @@ import ResetPassword from '@/views/auth/ResetPassword.vue'
 import SignIn from '@/views/auth/SignIn.vue'
 import SignUp from '@/views/auth/SignUp.vue'
 import Dashboard from '@/views/dashboard/Dashboard.vue'
+import NotFound from '@/views/other/NotFound.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 // TODO: Type-safe meta property
@@ -22,6 +23,12 @@ export const ROUTES = {
     meta: { isPrivate: false },
   },
   DASHBOARD: { name: 'Dashboard', path: '/', component: Dashboard, meta: { isPrivate: true } },
+  NOT_FOUND: {
+    name: 'NotFound',
+    path: '/:pathMatch(.*)*',
+    component: NotFound,
+    meta: { isPrivate: false },
+  },
 } as const satisfies Record<string, RouteRecordRaw>
 
 const router = createRouter({
