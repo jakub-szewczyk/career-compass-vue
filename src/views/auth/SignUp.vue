@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
 import { useTitle } from '@vueuse/core'
+import { ROUTES } from '@/router'
 
 useTitle('CareerCompass - Sign up')
 
@@ -106,9 +107,11 @@ const handleSubmit = form.handleSubmit((values) => {
           <Button type="submit">Sign up</Button>
           <p class="text-center text-sm text-slate-500">
             Already have an account?
-            <RouterLink class="text-foreground font-semibold hover:underline" to="/sign-in"
-              >Sign in</RouterLink
-            >
+            <RouterLink
+              class="text-foreground font-semibold hover:underline"
+              :to="ROUTES.SIGN_IN.path"
+              >Sign in
+            </RouterLink>
           </p>
         </form>
       </CardContent>

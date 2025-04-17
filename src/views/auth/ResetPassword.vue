@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTES } from '@/router'
 import Button from '@/components/ui/button/Button.vue'
 import { FormField, FormControl, FormItem, FormLabel } from '@/components/ui/form'
 import Input from '@/components/ui/input/Input.vue'
@@ -73,7 +74,7 @@ const handleSubmit = form.handleSubmit((values) => {
           <Button type="submit">Submit</Button>
           <RouterLink
             class="text-foreground flex items-center gap-x-0.5 text-sm font-semibold hover:underline"
-            to="/sign-in"
+            :to="ROUTES.SIGN_IN.path"
           >
             <ArrowLeft class="size-4" /> Back to sign in
           </RouterLink>

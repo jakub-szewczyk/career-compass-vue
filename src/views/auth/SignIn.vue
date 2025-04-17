@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ROUTES } from '@/router'
 import Button from '@/components/ui/button/Button.vue'
 import { FormField, FormControl, FormItem, FormLabel } from '@/components/ui/form'
 import Input from '@/components/ui/input/Input.vue'
@@ -9,14 +10,27 @@ import FormMessage from '@/components/ui/form/FormMessage.vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
-import { useTitle } from '@vueuse/core'
+import { useLocalStorage, useTitle } from '@vueuse/core'
 import { useMutation } from '@tanstack/vue-query'
 import { signIn } from '@/services/auth'
 import { Loader2 } from 'lucide-vue-next'
+import { useRoute, useRouter } from 'vue-router'
 
 useTitle('CareerCompass - Sign in')
 
-const { mutate, isPending } = useMutation({ mutationFn: signIn })
+const route = useRoute()
+const router = useRouter()
+
+const token = useLocalStorage<string | null>('token', null)
+
+const { mutate, isPending } = useMutation({
+  mutationFn: signIn,
+  onSuccess: (data) => {
+    token.value = data.token
+    const path = (route.query.redirect || '/') as string
+    router.replace(path)
+  },
+})
 
 const validationSchema = toTypedSchema(
   z.object({
@@ -57,7 +71,9 @@ const handleSubmit = form.handleSubmit((values) => mutate(values))
               <FormMessage />
             </FormItem>
           </FormField>
-          <RouterLink class="ml-auto text-sm font-semibold hover:underline" to="/forgot-password"
+          <RouterLink
+            class="ml-auto text-sm font-semibold hover:underline"
+            :to="ROUTES.FORGOT_PASSWORD.path"
             >Forgot password?
           </RouterLink>
           <Button type="submit" :disabled="isPending">
@@ -66,9 +82,11 @@ const handleSubmit = form.handleSubmit((values) => mutate(values))
           </Button>
           <p class="text-center text-sm text-slate-500">
             Don’t have an account?
-            <RouterLink class="text-foreground font-semibold hover:underline" to="/sign-up"
-              >Sign up</RouterLink
-            >
+            <RouterLink
+              class="text-foreground font-semibold hover:underline"
+              :to="ROUTES.SIGN_UP.path"
+              >Sign up
+            </RouterLink>
           </p>
         </form>
       </CardContent>
