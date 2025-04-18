@@ -44,12 +44,15 @@ const handleSignOut = () => {
 
 <template>
   <Sidebar collapsible="icon">
-    <div class="mb-3 mt-2 lg:mt-4">
+    <div class="mt-2 mb-3 lg:mt-4">
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton class="hover:bg-transparent active:bg-transparent pointer-events-none" asChild>
+              <SidebarMenuButton
+                class="pointer-events-none hover:bg-transparent active:bg-transparent"
+                asChild
+              >
                 <div>
                   <Compass class="!size-6" />
                   <span class="text-lg font-semibold">CareerCompass</span>
@@ -67,8 +70,10 @@ const handleSignOut = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton :isActive="route.path === ROUTES.DASHBOARD.path" asChild>
-                <RouterLink :class="cn(route.path !== ROUTES.DASHBOARD.path && '!text-slate-500')"
-                  :to="ROUTES.DASHBOARD.path">
+                <RouterLink
+                  :class="cn(route.path !== ROUTES.DASHBOARD.path && '!text-slate-500')"
+                  :to="ROUTES.DASHBOARD.path"
+                >
                   <Home class="!size-5" />
                   <span>Home</span>
                 </RouterLink>
@@ -79,13 +84,17 @@ const handleSignOut = () => {
       </SidebarGroup>
 
       <SidebarGroup>
-        <SidebarGroupLabel class="uppercase text-slate-500 text-[10px] font-semibold">Job search</SidebarGroupLabel>
+        <SidebarGroupLabel class="text-[10px] font-semibold text-slate-500 uppercase"
+          >Job search</SidebarGroupLabel
+        >
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton :isActive="route.path === ROUTES.RESUMES.path" asChild>
-                <RouterLink :class="cn(route.path !== ROUTES.RESUMES.path && '!text-slate-500')"
-                  :to="ROUTES.RESUMES.path">
+                <RouterLink
+                  :class="cn(route.path !== ROUTES.RESUMES.path && '!text-slate-500')"
+                  :to="ROUTES.RESUMES.path"
+                >
                   <TextCursor class="!size-5" />
                   <span>Resumes</span>
                 </RouterLink>
@@ -94,8 +103,10 @@ const handleSignOut = () => {
 
             <SidebarMenuItem>
               <SidebarMenuButton :isActive="route.path === ROUTES.INTERVIEWS.path" asChild>
-                <RouterLink :class="cn(route.path !== ROUTES.INTERVIEWS.path && '!text-slate-500')"
-                  :to="ROUTES.INTERVIEWS.path">
+                <RouterLink
+                  :class="cn(route.path !== ROUTES.INTERVIEWS.path && '!text-slate-500')"
+                  :to="ROUTES.INTERVIEWS.path"
+                >
                   <Calendar class="!size-5" />
                   <span>Interviews</span>
                 </RouterLink>
@@ -104,8 +115,10 @@ const handleSignOut = () => {
 
             <SidebarMenuItem>
               <SidebarMenuButton :isActive="route.path === ROUTES.APPLICATIONS.path" asChild>
-                <RouterLink :class="cn(route.path !== ROUTES.APPLICATIONS.path && '!text-slate-500')"
-                  :to="ROUTES.APPLICATIONS.path">
+                <RouterLink
+                  :class="cn(route.path !== ROUTES.APPLICATIONS.path && '!text-slate-500')"
+                  :to="ROUTES.APPLICATIONS.path"
+                >
                   <Briefcase class="!size-5" />
                   <span>Applications</span>
                 </RouterLink>
@@ -116,13 +129,17 @@ const handleSignOut = () => {
       </SidebarGroup>
 
       <SidebarGroup>
-        <SidebarGroupLabel class="uppercase text-slate-500 text-[10px] font-semibold">Account</SidebarGroupLabel>
+        <SidebarGroupLabel class="text-[10px] font-semibold text-slate-500 uppercase"
+          >Account</SidebarGroupLabel
+        >
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton :isActive="route.path === ROUTES.SETTINGS.path" asChild>
-                <RouterLink :class="cn(route.path !== ROUTES.SETTINGS.path && '!text-slate-500')"
-                  :to="ROUTES.SETTINGS.path">
+                <RouterLink
+                  :class="cn(route.path !== ROUTES.SETTINGS.path && '!text-slate-500')"
+                  :to="ROUTES.SETTINGS.path"
+                >
                   <Settings2 class="!size-5" />
                   <span>Settings</span>
                 </RouterLink>
@@ -131,8 +148,11 @@ const handleSignOut = () => {
 
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Button class="cursor-pointer justify-start text-slate-500 hover:text-slate-500
-                  active:text-slate-500" variant="ghost" @click="handleSignOut">
+                <Button
+                  class="cursor-pointer justify-start text-slate-500 hover:text-slate-500 active:text-slate-500"
+                  variant="ghost"
+                  @click="handleSignOut"
+                >
                   <LogOut class="!size-5" />
                   <span>Sign out</span>
                 </Button>
@@ -147,8 +167,11 @@ const handleSignOut = () => {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <Button class="cursor-pointer justify-start text-slate-500 hover:text-slate-500 active:text-slate-500"
-                  variant="ghost" @click="toggleSidebar">
+                <Button
+                  class="cursor-pointer justify-start text-slate-500 hover:text-slate-500 active:text-slate-500"
+                  variant="ghost"
+                  @click="toggleSidebar"
+                >
                   <PanelLeftClose class="!size-5" />
                   <span>Collapse</span>
                 </Button>

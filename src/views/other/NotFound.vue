@@ -17,7 +17,7 @@ const token = useLocalStorage<string | null>('token', null)
     <div class="flex max-w-xs flex-col gap-y-4 sm:max-w-sm md:max-w-md lg:max-w-lg">
       <img class="w-full" src="@/assets/not-found.svg" alt="" />
       <RouterLink
-        class="text-foreground flex items-center justify-center gap-x-2 text-sm font-semibold hover:underline"
+        class="text-foreground mx-auto flex w-fit items-center gap-x-2 text-sm font-semibold hover:underline"
         :to="token ? ROUTES.DASHBOARD.path : ROUTES.SIGN_IN.path"
       >
         <ArrowLeft class="size-4" /> <span v-if="token">Back to dashboard</span
