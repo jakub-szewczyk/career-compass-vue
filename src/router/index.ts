@@ -1,9 +1,13 @@
+import Applications from '@/views/applications/Applications.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
 import ResetPassword from '@/views/auth/ResetPassword.vue'
 import SignIn from '@/views/auth/SignIn.vue'
 import SignUp from '@/views/auth/SignUp.vue'
 import Dashboard from '@/views/dashboard/Dashboard.vue'
+import Interviews from '@/views/interviews/Interviews.vue'
 import NotFound from '@/views/other/NotFound.vue'
+import Resumes from '@/views/resumes/Resumes.vue'
+import Settings from '@/views/settings/Settings.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
 // TODO: Type-safe meta property
@@ -23,6 +27,25 @@ export const ROUTES = {
     meta: { isPrivate: false },
   },
   DASHBOARD: { name: 'Dashboard', path: '/', component: Dashboard, meta: { isPrivate: true } },
+  RESUMES: { name: 'Resumes', path: '/resumes', component: Resumes, meta: { isPrivate: true } },
+  INTERVIEWS: {
+    name: 'Interviews',
+    path: '/interviews',
+    component: Interviews,
+    meta: { isPrivate: true },
+  },
+  APPLICATIONS: {
+    name: 'Applications',
+    path: '/applications',
+    component: Applications,
+    meta: { isPrivate: true },
+  },
+  SETTINGS: {
+    name: 'Settings',
+    path: '/settings',
+    component: Settings,
+    meta: { isPrivate: true },
+  },
   NOT_FOUND: {
     name: 'NotFound',
     path: '/:pathMatch(.*)*',

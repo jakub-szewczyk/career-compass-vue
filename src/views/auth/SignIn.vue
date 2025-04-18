@@ -28,7 +28,7 @@ const { mutate, isPending } = useMutation({
   onSuccess: (data) => {
     token.value = data.token
     const path = (route.query.redirect || '/') as string
-    router.replace(path)
+    router.push(path)
   },
 })
 
@@ -71,10 +71,8 @@ const handleSubmit = form.handleSubmit((values) => mutate(values))
               <FormMessage />
             </FormItem>
           </FormField>
-          <RouterLink
-            class="ml-auto text-sm font-semibold hover:underline"
-            :to="ROUTES.FORGOT_PASSWORD.path"
-            >Forgot password?
+          <RouterLink class="ml-auto text-sm font-semibold hover:underline" :to="ROUTES.FORGOT_PASSWORD.path">Forgot
+            password?
           </RouterLink>
           <Button type="submit" :disabled="isPending">
             <Loader2 class="mr-2 h-4 w-4 animate-spin" v-if="isPending" />
@@ -82,10 +80,7 @@ const handleSubmit = form.handleSubmit((values) => mutate(values))
           </Button>
           <p class="text-center text-sm text-slate-500">
             Don’t have an account?
-            <RouterLink
-              class="text-foreground font-semibold hover:underline"
-              :to="ROUTES.SIGN_UP.path"
-              >Sign up
+            <RouterLink class="text-foreground font-semibold hover:underline" :to="ROUTES.SIGN_UP.path">Sign up
             </RouterLink>
           </p>
         </form>
