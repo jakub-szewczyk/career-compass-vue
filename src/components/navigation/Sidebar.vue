@@ -32,7 +32,9 @@ const token = useLocalStorage<string | null>('token', null)
 const route = useRoute()
 const router = useRouter()
 
-const { toggleSidebar } = useSidebar()
+const { openMobile, setOpenMobile, toggleSidebar } = useSidebar()
+
+router.afterEach((to, from) => openMobile && to.path !== from.path && setOpenMobile(false))
 
 const handleSignOut = () => {
   token.value = null
