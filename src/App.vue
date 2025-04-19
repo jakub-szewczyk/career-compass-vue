@@ -27,7 +27,7 @@ const isSidebarVisible = computed(() =>
   <SidebarProvider v-if="isSidebarVisible">
     <Sidebar />
     <main class="w-full p-4 lg:p-6">
-      <Navbar />
+      <Navbar class="mb-5.5" />
       <RouterView />
     </main>
   </SidebarProvider>

@@ -44,7 +44,7 @@ const handleSignOut = () => {
 
 <template>
   <Sidebar collapsible="icon">
-    <div class="mt-2 mb-3 lg:mt-4">
+    <div class="mt-1.5 mb-3.5 lg:mt-3.5">
       <SidebarGroup>
         <SidebarGroupContent>
           <SidebarMenu>

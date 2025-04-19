@@ -23,7 +23,7 @@ const initials = computed(() =>
 </script>
 
 <template>
-  <header class="mb-5.5 flex justify-between">
+  <header class="flex justify-between">
     <Button
       :class="cn('invisible', isMobile && 'visible')"
       variant="outline"

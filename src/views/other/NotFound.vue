@@ -10,7 +10,7 @@ const token = useLocalStorage<string | null>('token', null)
 
 <template>
   <div class="flex h-screen w-full flex-col items-center justify-between gap-y-4">
-    <div class="mt-4 ml-4 flex items-center gap-x-2 self-start lg:mt-6 lg:ml-6">
+    <div class="mt-4 ml-4 flex items-center gap-x-2 self-start lg:mt-6">
       <Compass />
       <span class="text-lg font-semibold">CareerCompass</span>
     </div>
