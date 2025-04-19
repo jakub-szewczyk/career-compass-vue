@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Skeleton } from '@/components/ui/skeleton'
 import { QUERY_KEYS } from '@/lib/query'
+import { greeting } from '@/modules/common'
 import { getProfile } from '@/services/profile'
 import { useQuery } from '@tanstack/vue-query'
 import { useTitle } from '@vueuse/core'
@@ -14,6 +15,6 @@ const { data, isSuccess } = useQuery({
 </script>
 
 <template>
-  <h1 class="text-xl font-semibold" v-if="isSuccess">Good afternoon, {{ data?.firstName }} 👋</h1>
+  <h1 class="text-xl font-semibold" v-if="isSuccess">{{ greeting() }}, {{ data?.firstName }} 👋</h1>
   <Skeleton class="h-7 w-[250px] bg-slate-200" v-else />
 </template>

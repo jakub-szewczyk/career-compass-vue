@@ -9,6 +9,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { api, type ApiError } from './services/api'
+import { useQueryClient } from '@tanstack/vue-query'
 
 const token = useLocalStorage<string | null>('token', null)
 
@@ -27,6 +28,8 @@ const isSidebarVisible = computed(() =>
   ).includes(route.path),
 )
 
+const queryClient = useQueryClient()
+
 watch(
   token,
   () => {
@@ -40,7 +43,15 @@ watch(
       (error: ApiError) => {
         if (error.status === 401) {
           token.value = null
-          router.push(ROUTES.SIGN_IN.path) // TODO: Persist full path
+          queryClient.clear()
+          router.push({
+            path: ROUTES.SIGN_IN.path,
+            query: {
+              ...(route.path !== ROUTES.DASHBOARD.path && {
+                redirect: route.fullPath,
+              }),
+            },
+          })
         }
         return Promise.reject(error)
       },

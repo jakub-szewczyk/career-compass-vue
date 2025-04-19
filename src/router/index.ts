@@ -63,7 +63,7 @@ router.beforeEach((to, _, next) => {
   const token = localStorage.getItem('token')
 
   if (to.meta.isPrivate && !token)
-    next({
+    return next({
       name: ROUTES.SIGN_IN.name,
       replace: true,
       query: {
@@ -84,7 +84,7 @@ router.beforeEach((to, _, next) => {
     ).includes(to.path) &&
     token
   )
-    next({ name: ROUTES.DASHBOARD.name, replace: true })
+    return next({ name: ROUTES.DASHBOARD.name, replace: true })
 
   next()
 })
