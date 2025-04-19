@@ -5,10 +5,15 @@ import { SidebarProvider } from './components/ui/sidebar'
 import Sidebar from '@/components/navigation/Sidebar.vue'
 import Navbar from '@/components/navigation/Navbar.vue'
 import { ROUTES } from './router'
-import { useRoute } from 'vue-router'
-import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
+import { useLocalStorage } from '@vueuse/core'
+import { api, type ApiError } from './services/api'
+
+const token = useLocalStorage<string | null>('token', null)
 
 const route = useRoute()
+const router = useRouter()
 
 const isSidebarVisible = computed(() =>
   (
@@ -20,6 +25,28 @@ const isSidebarVisible = computed(() =>
       ROUTES.SETTINGS.path,
     ] as string[]
   ).includes(route.path),
+)
+
+watch(
+  token,
+  () => {
+    api.interceptors.request.use((config) => {
+      if (token.value) config.headers.Authorization = `Bearer ${token.value}`
+      return config
+    })
+
+    api.interceptors.response.use(
+      (config) => config,
+      (error: ApiError) => {
+        if (error.status === 401) {
+          token.value = null
+          router.push(ROUTES.SIGN_IN.path) // TODO: Persist full path
+        }
+        return Promise.reject(error)
+      },
+    )
+  },
+  { once: true, immediate: true },
 )
 </script>
 

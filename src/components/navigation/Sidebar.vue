@@ -26,6 +26,7 @@ import { Button } from '../ui/button'
 import { useRoute, useRouter } from 'vue-router'
 import { cn } from '@/lib/utils'
 import { useLocalStorage } from '@vueuse/core'
+import { useQueryClient } from '@tanstack/vue-query'
 
 const token = useLocalStorage<string | null>('token', null)
 
@@ -36,8 +37,11 @@ const { openMobile, setOpenMobile, toggleSidebar } = useSidebar()
 
 router.afterEach((to, from) => openMobile && to.path !== from.path && setOpenMobile(false))
 
+const queryClient = useQueryClient()
+
 const handleSignOut = () => {
   token.value = null
+  queryClient.clear()
   router.push(ROUTES.SIGN_IN.path)
 }
 </script>
