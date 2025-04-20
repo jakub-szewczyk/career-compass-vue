@@ -16,7 +16,7 @@ defineProps({
       class="flex h-screen w-full flex-col items-center justify-between gap-y-4 lg:w-1/2 xl:w-3/5"
     >
       <div class="mt-4 ml-4 flex items-center gap-x-2 self-start lg:mt-6">
-        <Compass />
+        <Compass class="size-5" />
         <span class="text-lg font-semibold">CareerCompass</span>
       </div>
       <div class="flex w-11/12 max-w-sm flex-col gap-y-4 xl:max-w-md">

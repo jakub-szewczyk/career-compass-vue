@@ -58,7 +58,7 @@ const handleSignOut = () => {
                 asChild
               >
                 <div>
-                  <Compass class="!size-6" />
+                  <Compass class="!size-5" />
                   <span class="text-lg font-semibold">CareerCompass</span>
                 </div>
               </SidebarMenuButton>
@@ -153,7 +153,7 @@ const handleSignOut = () => {
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Button
-                  class="cursor-pointer justify-start text-slate-500 hover:text-slate-500 active:text-slate-500"
+                  class="cursor-pointer justify-start !pl-2 text-slate-500 hover:text-slate-500 active:text-slate-500"
                   variant="ghost"
                   @click="handleSignOut"
                 >
@@ -172,7 +172,7 @@ const handleSignOut = () => {
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
                 <Button
-                  class="cursor-pointer justify-start text-slate-500 hover:text-slate-500 active:text-slate-500"
+                  class="cursor-pointer justify-start !pl-2 text-slate-500 hover:text-slate-500 active:text-slate-500"
                   variant="ghost"
                   @click="toggleSidebar"
                 >
