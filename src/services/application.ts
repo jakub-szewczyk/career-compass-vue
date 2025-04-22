@@ -1,7 +1,7 @@
 import type { PaginatedResponse } from '@/types/common'
 import { api } from './api'
 
-type Status = 'IN_PROGRESS' | 'REJECTED' | 'ACCEPTED'
+export type Status = 'IN_PROGRESS' | 'REJECTED' | 'ACCEPTED'
 
 type GetApplicationsPayload = Partial<{
   page: number
