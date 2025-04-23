@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
 import { getApplications, type Status } from '@/services/application'
@@ -20,6 +21,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import type { ColumnDef } from '@tanstack/vue-table'
+import { h } from 'vue'
+import DataTable from '@/components/common/DataTable.vue'
+
+type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
 useTitle('CareerCompass - Applications')
 
@@ -31,6 +37,64 @@ const { data } = useQuery({
   queryKey: QUERY_KEYS.APPLICATIONS,
   queryFn: () => getApplications(),
 })
+
+const columns: ColumnDef<Application>[] = [
+  {
+    accessorKey: 'companyName',
+    header: () => h('div', null, 'Company'),
+    cell: ({ row }) => h('div', null, row.getValue('companyName')),
+  },
+  {
+    accessorKey: 'jobTitle',
+    header: () => h('div', null, 'Job title'),
+    cell: ({ row }) => h('div', null, row.getValue('jobTitle')),
+  },
+  {
+    accessorKey: 'dateApplied',
+    header: () => h('div', null, 'Date applied'),
+    cell: ({ row }) => {
+      const dateFormatter = new DateFormatter(navigator.language, {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      })
+      return h('div', null, dateFormatter.format(new Date(row.getValue('dateApplied'))))
+    },
+  },
+  {
+    accessorKey: 'status',
+    header: () => h('div', null, 'Status'),
+    cell: ({ row }) => h('div', null, row.getValue('status')),
+  },
+  {
+    accessorKey: 'salary',
+    header: () => h('div', null, 'Salary'),
+    cell: ({ row }) => {
+      const numberFormat = new Intl.NumberFormat(navigator.language, {
+        style: 'currency',
+        currency: localeCurrency.getCurrency(navigator.language) || 'USD',
+      })
+
+      let salary: string | undefined = undefined
+
+      if (typeof row.original.minSalary === 'number' && typeof row.original.maxSalary === 'number')
+        salary = `${numberFormat.format(row.original.minSalary)} - ${numberFormat.format(row.original.maxSalary)}`
+
+      if (typeof row.original.minSalary === 'number' && row.original.maxSalary === undefined)
+        salary = numberFormat.format(row.original.minSalary)
+
+      if (row.original.minSalary === undefined && typeof row.original.maxSalary === 'number')
+        salary = numberFormat.format(row.original.maxSalary)
+
+      return h('div', null, salary)
+    },
+  },
+  {
+    accessorKey: 'isReplied',
+    header: () => h('div', null, 'Replied'),
+    cell: ({ row }) => h('div', null, row.getValue('isReplied') ? 'Yes' : 'No'),
+  },
+]
 
 const dateFormatter = new DateFormatter(navigator.language, { dateStyle: 'long' })
 
@@ -113,5 +177,7 @@ const handleClear = () => {
     <Button class="w-full sm:w-fit"> <Plus /> New application </Button>
   </div>
 
-  <pre>{{ JSON.stringify(data, null, 2) }}</pre>
+  <div class="container mx-auto py-10">
+    <DataTable class="bg-white" :columns="columns" :data="data?.data || []" />
+  </div>
 </template>
