@@ -1,5 +1,5 @@
 <script setup lang="ts" generic="TData, TValue">
-import type { ColumnDef } from '@tanstack/vue-table'
+import type { ColumnDef, PaginationState } from '@tanstack/vue-table'
 import {
   Table,
   TableBody,
@@ -9,10 +9,28 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { FlexRender, getCoreRowModel, useVueTable } from '@tanstack/vue-table'
+import {
+  Pagination,
+  PaginationEllipsis,
+  PaginationFirst,
+  PaginationLast,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationPrevious,
+} from '@/components/ui/pagination'
+import { Button } from '../ui/button'
+import { cn } from '@/lib/utils'
 
 const props = defineProps<{
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
+  pagination: {
+    page: number
+    size: number
+    total: number
+    onChange: (paginationState: PaginationState) => void
+  }
 }>()
 
 const table = useVueTable({
@@ -23,11 +41,27 @@ const table = useVueTable({
     return props.columns
   },
   getCoreRowModel: getCoreRowModel(),
+  manualPagination: true,
+  state: {
+    pagination: {
+      pageSize: props.pagination.size,
+      pageIndex: props.pagination.page,
+    },
+  },
+  onPaginationChange: (updater) => {
+    if (typeof updater !== 'function') return
+    props.pagination.onChange(
+      updater({
+        pageSize: props.pagination.size,
+        pageIndex: props.pagination.page,
+      }),
+    )
+  },
 })
 </script>
 
 <template>
-  <div class="rounded-md border">
+  <div class="rounded-md border" :class="$attrs.class">
     <Table>
       <TableHeader>
         <TableRow v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -54,10 +88,41 @@ const table = useVueTable({
         </template>
         <template v-else>
           <TableRow>
-            <TableCell :colspan="columns.length" class="h-24 text-center"> No results. </TableCell>
+            <TableCell :colspan="columns.length" class="h-24 text-center"> No results </TableCell>
           </TableRow>
         </template>
       </TableBody>
     </Table>
+  </div>
+
+  <div class="mt-4">
+    <Pagination
+      class="justify-end"
+      :page="props.pagination.page"
+      :itemsPerPage="props.pagination.size"
+      :total="props.pagination.total"
+      :siblingCount="1"
+      showEdges
+      v-slot="{ page }"
+      @update:page="table.setPageIndex"
+    >
+      <PaginationContent class="flex items-center gap-1" v-slot="{ items }">
+        <PaginationFirst />
+        <PaginationPrevious />
+        <template v-for="(item, index) in items">
+          <PaginationItem v-if="item.type === 'page'" :key="index" :value="item.value" asChild>
+            <Button
+              :class="cn('size-9 p-0', item.value === page && 'bg-white hover:bg-white')"
+              :variant="item.value === page ? 'outline' : 'ghost'"
+            >
+              {{ item.value }}
+            </Button>
+          </PaginationItem>
+          <PaginationEllipsis v-else :key="item.type" :index="index" />
+        </template>
+        <PaginationNext />
+        <PaginationLast />
+      </PaginationContent>
+    </Pagination>
   </div>
 </template>

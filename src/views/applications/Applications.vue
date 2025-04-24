@@ -22,10 +22,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ColumnDef } from '@tanstack/vue-table'
+import type { ColumnDef, PaginationState } from '@tanstack/vue-table'
 import { h } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/domain/application/StatusBadge.vue'
+import { watch } from 'vue'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
@@ -35,25 +36,36 @@ const companyNameOrJobTitle = ref('')
 const dateApplied = ref<DateValue>()
 const status = ref<Status>()
 
+// TODO: Keep state in query params
+const page = ref(1)
+const size = ref(10)
+
 const { data } = useQuery({
-  queryKey: QUERY_KEYS.APPLICATIONS,
-  queryFn: () => getApplications(),
+  queryKey: QUERY_KEYS.APPLICATIONS({ page, size }),
+  queryFn: () => getApplications({ page: page.value - 1, size: size.value }),
+})
+
+watch(data, (newData) => {
+  if (newData) {
+    page.value = newData.page + 1
+    size.value = newData.size
+  }
 })
 
 const columns: ColumnDef<Application>[] = [
   {
     accessorKey: 'companyName',
-    header: () => h('div', null, 'Company'),
+    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Company'),
     cell: ({ row }) => h('div', null, row.getValue('companyName')),
   },
   {
     accessorKey: 'jobTitle',
-    header: () => h('div', null, 'Job title'),
+    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Job title'),
     cell: ({ row }) => h('div', null, row.getValue('jobTitle')),
   },
   {
     accessorKey: 'dateApplied',
-    header: () => h('div', null, 'Date applied'),
+    header: () => h('div', { class: 'w-[90px] text-slate-500' }, 'Date applied'),
     cell: ({ row }) => {
       const dateFormatter = new DateFormatter(navigator.language, {
         day: '2-digit',
@@ -65,7 +77,7 @@ const columns: ColumnDef<Application>[] = [
   },
   {
     accessorKey: 'status',
-    header: () => h('div', null, 'Status'),
+    header: () => h('div', { class: 'w-[100px] text-slate-500' }, 'Status'),
     cell: ({ row }) => {
       const status = row.getValue('status') as Status
       return h(StatusBadge, { status })
@@ -73,7 +85,7 @@ const columns: ColumnDef<Application>[] = [
   },
   {
     accessorKey: 'salary',
-    header: () => h('div', null, 'Salary'),
+    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Salary'),
     cell: ({ row }) => {
       const numberFormat = new Intl.NumberFormat(navigator.language, {
         style: 'currency',
@@ -96,7 +108,7 @@ const columns: ColumnDef<Application>[] = [
   },
   {
     accessorKey: 'isReplied',
-    header: () => h('div', null, 'Replied'),
+    header: () => h('div', { class: 'w-[50px] text-slate-500' }, 'Replied'),
     cell: ({ row }) => {
       const isReplied = row.getValue('isReplied')
 
@@ -110,16 +122,22 @@ const columns: ColumnDef<Application>[] = [
   },
   {
     id: 'actions',
+    header: () => h('div', { class: 'w-[40px] text-slate-500' }),
     cell: () => h('div', { class: 'relative' }, h(DropdownAction)),
   },
 ]
 
 const dateFormatter = new DateFormatter(navigator.language, { dateStyle: 'long' })
 
-const handleClear = () => {
+const handleFiltersClear = () => {
   companyNameOrJobTitle.value = ''
   dateApplied.value = undefined
   status.value = undefined
+}
+
+const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
+  size.value = pageSize
+  page.value = pageIndex
 }
 </script>
 
@@ -194,7 +212,7 @@ const handleClear = () => {
         class="bg-white"
         variant="outline"
         v-if="companyNameOrJobTitle || dateApplied || status"
-        @click="handleClear"
+        @click="handleFiltersClear"
       >
         <X /> Clear
       </Button>
@@ -207,5 +225,11 @@ const handleClear = () => {
     class="bg-white [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3"
     :columns="columns"
     :data="data?.data || []"
+    :pagination="{
+      page,
+      size,
+      total: data?.total || 0,
+      onChange: handlePaginationChange,
+    }"
   />
 </template>

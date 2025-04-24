@@ -64,7 +64,7 @@ watch(
 <template>
   <SidebarProvider v-if="isSidebarVisible">
     <Sidebar />
-    <main class="w-full p-4 lg:p-6">
+    <main class="w-full overflow-x-auto p-4 lg:p-6">
       <Navbar class="mb-5.5" />
       <RouterView />
     </main>
