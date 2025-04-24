@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import DropdownAction from '@/components/domain/application/ActionDropdown.vue'
 import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
 import { getApplications, type Status } from '@/services/application'
 import { useQuery } from '@tanstack/vue-query'
 import { useTitle } from '@vueuse/core'
-import { Plus, Search } from 'lucide-vue-next'
+import { Check, Plus, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -24,6 +25,7 @@ import {
 import type { ColumnDef } from '@tanstack/vue-table'
 import { h } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
+import StatusBadge from '@/components/domain/application/StatusBadge.vue'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
@@ -64,7 +66,10 @@ const columns: ColumnDef<Application>[] = [
   {
     accessorKey: 'status',
     header: () => h('div', null, 'Status'),
-    cell: ({ row }) => h('div', null, row.getValue('status')),
+    cell: ({ row }) => {
+      const status = row.getValue('status') as Status
+      return h(StatusBadge, { status })
+    },
   },
   {
     accessorKey: 'salary',
@@ -92,7 +97,20 @@ const columns: ColumnDef<Application>[] = [
   {
     accessorKey: 'isReplied',
     header: () => h('div', null, 'Replied'),
-    cell: ({ row }) => h('div', null, row.getValue('isReplied') ? 'Yes' : 'No'),
+    cell: ({ row }) => {
+      const isReplied = row.getValue('isReplied')
+
+      return h('div', { class: 'flex items-center gap-x-1' }, [
+        isReplied ? 'Yes' : 'No',
+        h(isReplied ? Check : X, {
+          class: cn('size-3.5', isReplied ? 'text-primary' : 'text-red-900'),
+        }),
+      ])
+    },
+  },
+  {
+    id: 'actions',
+    cell: () => h('div', { class: 'relative' }, h(DropdownAction)),
   },
 ]
 
@@ -153,13 +171,21 @@ const handleClear = () => {
         <SelectTrigger
           class="w-full bg-white font-light sm:max-w-[150px] [[data-placeholder]]:!text-slate-400"
         >
-          <SelectValue placeholder="Filter by status" />
+          <SelectValue placeholder="Filter by status">
+            <StatusBadge :status="status" v-if="status" />
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="IN_PROGRESS"> In progress </SelectItem>
-            <SelectItem value="REJECTED"> Rejected </SelectItem>
-            <SelectItem value="ACCEPTED"> Accepted </SelectItem>
+            <SelectItem value="IN_PROGRESS">
+              <StatusBadge status="IN_PROGRESS" />
+            </SelectItem>
+            <SelectItem value="REJECTED">
+              <StatusBadge status="REJECTED" />
+            </SelectItem>
+            <SelectItem value="ACCEPTED">
+              <StatusBadge status="ACCEPTED" />
+            </SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
@@ -177,7 +203,9 @@ const handleClear = () => {
     <Button class="w-full sm:w-fit"> <Plus /> New application </Button>
   </div>
 
-  <div class="container mx-auto py-10">
-    <DataTable class="bg-white" :columns="columns" :data="data?.data || []" />
-  </div>
+  <DataTable
+    class="bg-white [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3"
+    :columns="columns"
+    :data="data?.data || []"
+  />
 </template>
