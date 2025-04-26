@@ -4,7 +4,7 @@ import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
 import { getApplications, type Status } from '@/services/application'
-import { useQuery } from '@tanstack/vue-query'
+import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { useTitle } from '@vueuse/core'
 import { Check, Plus, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -37,17 +37,18 @@ const dateApplied = ref<DateValue>()
 const status = ref<Status>()
 
 // TODO: Keep state in query params
-const page = ref(1)
+const page = ref(0)
 const size = ref(10)
 
 const { data } = useQuery({
   queryKey: QUERY_KEYS.APPLICATIONS({ page, size }),
-  queryFn: () => getApplications({ page: page.value - 1, size: size.value }),
+  queryFn: () => getApplications({ page: page.value, size: size.value }),
+  placeholderData: keepPreviousData,
 })
 
 watch(data, (newData) => {
   if (newData) {
-    page.value = newData.page + 1
+    page.value = newData.page
     size.value = newData.size
   }
 })
