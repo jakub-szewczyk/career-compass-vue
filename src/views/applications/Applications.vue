@@ -30,27 +30,42 @@ import { watch } from 'vue'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
+const INITIAL_PAGE = 0
+const INITIAL_SIZE = 10
+
 useTitle('CareerCompass - Applications')
 
+// TODO:
+// - Track state in query params
+// - Debounce textfield's value
 const companyNameOrJobTitle = ref('')
 const dateApplied = ref<DateValue>()
 const status = ref<Status>()
 
-// TODO: Keep state in query params
-const page = ref(0)
-const size = ref(10)
+const page = ref(INITIAL_PAGE)
+const size = ref(INITIAL_SIZE)
 
 const { data } = useQuery({
-  queryKey: QUERY_KEYS.APPLICATIONS({ page, size }),
-  queryFn: () => getApplications({ page: page.value, size: size.value }),
+  queryKey: QUERY_KEYS.APPLICATIONS({ page, size, companyNameOrJobTitle, dateApplied, status }),
+  queryFn: () =>
+    getApplications({
+      page: page.value,
+      size: size.value,
+      ...(companyNameOrJobTitle.value && {
+        company_name_or_job_title: companyNameOrJobTitle.value,
+      }),
+      ...(dateApplied.value && {
+        date_applied: dateApplied.value.toString(),
+      }),
+      ...(status.value && {
+        status: status.value,
+      }),
+    }),
   placeholderData: keepPreviousData,
 })
 
-watch(data, (newData) => {
-  if (newData) {
-    page.value = newData.page
-    size.value = newData.size
-  }
+watch([companyNameOrJobTitle, dateApplied, status], () => {
+  page.value = INITIAL_PAGE
 })
 
 const columns: ColumnDef<Application>[] = [

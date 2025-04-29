@@ -110,7 +110,7 @@ const smallerThanLg = breakpoints.smaller('lg')
 
   <div class="mt-4 flex items-center justify-end gap-x-2 xl:justify-between">
     <div class="hidden text-sm font-normal text-slate-500 xl:block">
-      Showing <span class="text-black">{{ props.pagination.size }}</span> of
+      Showing <span class="text-black">{{ props.data.length }}</span> of
       <span class="text-black">{{ props.pagination.total }}</span> results
     </div>
 
