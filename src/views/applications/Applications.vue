@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
 import { getApplications, type Status } from '@/services/application'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
-import { useTitle } from '@vueuse/core'
+import { refDebounced, useTitle } from '@vueuse/core'
 import { Check, Plus, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -27,32 +27,39 @@ import { h } from 'vue'
 import DataTable from '@/components/common/DataTable.vue'
 import StatusBadge from '@/components/domain/application/StatusBadge.vue'
 import { watch } from 'vue'
+import { shallowRef } from 'vue'
+import { Skeleton } from '@/components/ui/skeleton'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
+const DEBOUNCE_DELAY = 500
 const INITIAL_PAGE = 0
 const INITIAL_SIZE = 10
 
 useTitle('CareerCompass - Applications')
 
-// TODO:
-// - Track state in query params
-// - Debounce textfield's value
-const companyNameOrJobTitle = ref('')
+const companyNameOrJobTitle = shallowRef('')
+const debouncedCompanyNameOrJobTitle = refDebounced(companyNameOrJobTitle, DEBOUNCE_DELAY)
 const dateApplied = ref<DateValue>()
 const status = ref<Status>()
 
 const page = ref(INITIAL_PAGE)
 const size = ref(INITIAL_SIZE)
 
-const { data } = useQuery({
-  queryKey: QUERY_KEYS.APPLICATIONS({ page, size, companyNameOrJobTitle, dateApplied, status }),
+const { data, isLoading, isRefetching } = useQuery({
+  queryKey: QUERY_KEYS.APPLICATIONS({
+    page,
+    size,
+    companyNameOrJobTitle: debouncedCompanyNameOrJobTitle,
+    dateApplied,
+    status,
+  }),
   queryFn: () =>
     getApplications({
       page: page.value,
       size: size.value,
-      ...(companyNameOrJobTitle.value && {
-        company_name_or_job_title: companyNameOrJobTitle.value,
+      ...(debouncedCompanyNameOrJobTitle.value && {
+        company_name_or_job_title: debouncedCompanyNameOrJobTitle.value,
       }),
       ...(dateApplied.value && {
         date_applied: dateApplied.value.toString(),
@@ -64,20 +71,26 @@ const { data } = useQuery({
   placeholderData: keepPreviousData,
 })
 
-watch([companyNameOrJobTitle, dateApplied, status], () => {
+watch([debouncedCompanyNameOrJobTitle, dateApplied, status], () => {
   page.value = INITIAL_PAGE
 })
+
+const skeletonCell = h(Skeleton, { class: 'h-5' })
 
 const columns: ColumnDef<Application>[] = [
   {
     accessorKey: 'companyName',
     header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Company'),
-    cell: ({ row }) => h('div', null, row.getValue('companyName')),
+    cell: ({ row }) => (isLoading.value ? skeletonCell : h('div', {
+      class: cn(isRefetching.value && 'opacity-50')
+    }, row.getValue('companyName'))),
   },
   {
     accessorKey: 'jobTitle',
     header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Job title'),
-    cell: ({ row }) => h('div', null, row.getValue('jobTitle')),
+    cell: ({ row }) => (isLoading.value ? skeletonCell : h('div', {
+      class: cn(isRefetching.value && 'opacity-50')
+    }, row.getValue('jobTitle'))),
   },
   {
     accessorKey: 'dateApplied',
@@ -88,7 +101,11 @@ const columns: ColumnDef<Application>[] = [
         month: '2-digit',
         year: 'numeric',
       })
-      return h('div', null, dateFormatter.format(new Date(row.getValue('dateApplied'))))
+      return isLoading.value
+        ? skeletonCell
+        : h('div', {
+          class: cn(isRefetching.value && 'opacity-50')
+        }, dateFormatter.format(new Date(row.getValue('dateApplied'))))
     },
   },
   {
@@ -96,7 +113,9 @@ const columns: ColumnDef<Application>[] = [
     header: () => h('div', { class: 'w-[100px] text-slate-500' }, 'Status'),
     cell: ({ row }) => {
       const status = row.getValue('status') as Status
-      return h(StatusBadge, { status })
+      return isLoading.value ? skeletonCell : h(StatusBadge, {
+        status, class: cn(isRefetching.value && 'opacity-50')
+      })
     },
   },
   {
@@ -119,7 +138,9 @@ const columns: ColumnDef<Application>[] = [
       if (row.original.minSalary === undefined && typeof row.original.maxSalary === 'number')
         salary = numberFormat.format(row.original.maxSalary)
 
-      return h('div', null, salary)
+      return isLoading.value ? skeletonCell : h('div', {
+        class: cn(isRefetching.value && 'opacity-50')
+      }, salary)
     },
   },
   {
@@ -128,12 +149,14 @@ const columns: ColumnDef<Application>[] = [
     cell: ({ row }) => {
       const isReplied = row.getValue('isReplied')
 
-      return h('div', { class: 'flex items-center gap-x-1' }, [
-        isReplied ? 'Yes' : 'No',
-        h(isReplied ? Check : X, {
-          class: cn('size-3.5', isReplied ? 'text-primary' : 'text-red-900'),
-        }),
-      ])
+      return isLoading.value
+        ? skeletonCell
+        : h('div', { class: cn('flex items-center gap-x-1', isRefetching.value && 'opacity-50') }, [
+          isReplied ? 'Yes' : 'No',
+          h(isReplied ? Check : X, {
+            class: cn('size-3.5', isReplied ? 'text-primary' : 'text-red-900'),
+          }),
+        ])
     },
   },
   {
@@ -166,11 +189,8 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
   <div class="mt-14 mb-4 flex flex-wrap justify-between gap-4">
     <div class="flex grow-[1] flex-col flex-wrap gap-4 sm:flex-row">
       <div class="relative w-full items-center sm:max-w-[270px]">
-        <Input
-          class="bg-white pl-9 placeholder:text-sm placeholder:font-light placeholder:text-slate-400"
-          placeholder="Filter by company name or job title"
-          v-model="companyNameOrJobTitle"
-        />
+        <Input class="bg-white pl-9 placeholder:text-sm placeholder:font-light placeholder:text-slate-400"
+          placeholder="Filter by company name or job title" v-model="companyNameOrJobTitle" />
         <span class="absolute inset-y-0 start-0 flex items-center justify-center px-3">
           <Search class="size-3.5 text-slate-400" />
         </span>
@@ -178,16 +198,11 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
 
       <Popover>
         <PopoverTrigger as-child>
-          <Button
-            class="bg-white !font-light hover:bg-white"
-            variant="outline"
-            :class="
-              cn(
-                'w-full justify-start text-left font-normal sm:max-w-[185px]',
-                !dateApplied && 'text-slate-400 hover:text-slate-400',
-              )
-            "
-          >
+          <Button class="bg-white !font-light hover:bg-white" variant="outline" :class="cn(
+            'w-full justify-start text-left font-normal sm:max-w-[185px]',
+            !dateApplied && 'text-slate-400 hover:text-slate-400',
+          )
+            ">
             <CalendarIcon class="mr-1 size-3.5" />
             {{
               dateApplied
@@ -202,9 +217,7 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
       </Popover>
 
       <Select v-model="status">
-        <SelectTrigger
-          class="w-full bg-white font-light sm:max-w-[150px] [[data-placeholder]]:!text-slate-400"
-        >
+        <SelectTrigger class="w-full bg-white font-light sm:max-w-[150px] [[data-placeholder]]:!text-slate-400">
           <SelectValue placeholder="Filter by status">
             <StatusBadge :status="status" v-if="status" />
           </SelectValue>
@@ -224,28 +237,22 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
         </SelectContent>
       </Select>
 
-      <Button
-        class="bg-white"
-        variant="outline"
-        v-if="companyNameOrJobTitle || dateApplied || status"
-        @click="handleFiltersClear"
-      >
+      <Button class="bg-white" variant="outline" v-if="companyNameOrJobTitle || dateApplied || status"
+        @click="handleFiltersClear">
         <X /> Clear
       </Button>
     </div>
 
-    <Button class="w-full sm:w-fit"> <Plus /> New application </Button>
+    <Button class="w-full sm:w-fit">
+      <Plus /> New application
+    </Button>
   </div>
 
-  <DataTable
-    class="bg-white [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3"
-    :columns="columns"
-    :data="data?.data || []"
-    :pagination="{
+  <DataTable class="bg-white [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3" :columns="columns"
+    :data="data?.data || Array(size).fill({})" :pagination="{
       page,
       size,
       total: data?.total || 0,
       onChange: handlePaginationChange,
-    }"
-  />
+    }" />
 </template>
