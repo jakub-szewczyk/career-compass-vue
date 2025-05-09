@@ -1,12 +1,13 @@
 <script setup lang="ts">
+import { snakeCase } from 'lodash'
 import DropdownAction from '@/components/domain/application/ActionDropdown.vue'
 import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
-import { getApplications, type Status } from '@/services/application'
+import { getApplications, type Sort, type Status } from '@/services/application'
 import { keepPreviousData, useQuery } from '@tanstack/vue-query'
 import { refDebounced, useTitle } from '@vueuse/core'
-import { Check, Plus, Search } from 'lucide-vue-next'
+import { ArrowDown, ArrowUp, Check, Plus, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -42,36 +43,35 @@ const companyNameOrJobTitle = shallowRef('')
 const debouncedCompanyNameOrJobTitle = refDebounced(companyNameOrJobTitle, DEBOUNCE_DELAY)
 const dateApplied = ref<DateValue>()
 const status = ref<Status>()
-
+const sort = ref<Sort>()
 const page = ref(INITIAL_PAGE)
 const size = ref(INITIAL_SIZE)
 
 const { data, isLoading, isRefetching } = useQuery({
   queryKey: QUERY_KEYS.APPLICATIONS({
-    page,
-    size,
     companyNameOrJobTitle: debouncedCompanyNameOrJobTitle,
     dateApplied,
     status,
+    sort,
+    page,
+    size,
   }),
   queryFn: () =>
     getApplications({
-      page: page.value,
-      size: size.value,
       ...(debouncedCompanyNameOrJobTitle.value && {
         company_name_or_job_title: debouncedCompanyNameOrJobTitle.value,
       }),
-      ...(dateApplied.value && {
-        date_applied: dateApplied.value.toString(),
-      }),
-      ...(status.value && {
-        status: status.value,
-      }),
+      ...(dateApplied.value && { date_applied: dateApplied.value.toString() }),
+      ...(status.value && { status: status.value }),
+      ...(sort.value && { sort: sort.value }),
+      page: page.value,
+      size: size.value,
     }),
   placeholderData: keepPreviousData,
 })
 
-watch([debouncedCompanyNameOrJobTitle, dateApplied, status], () => {
+
+watch([debouncedCompanyNameOrJobTitle, dateApplied, status, sort], () => {
   page.value = INITIAL_PAGE
 })
 
@@ -80,21 +80,58 @@ const skeletonCell = h(Skeleton, { class: 'h-5' })
 const columns: ColumnDef<Application>[] = [
   {
     accessorKey: 'companyName',
-    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Company'),
-    cell: ({ row }) => (isLoading.value ? skeletonCell : h('div', {
-      class: cn(isRefetching.value && 'opacity-50')
-    }, row.getValue('companyName'))),
+    header: ({ column }) =>
+      h(
+        'div',
+        { class: 'w-[150px] text-slate-500' },
+        h(
+          Button,
+          {
+            class: 'h-fit !px-0',
+            size: 'sm',
+            variant: 'ghost',
+            onClick: () => handleSortingChange(column.id),
+          },
+          () => ['Company', sortingIndicator(column.id)],
+        ),
+      ),
+    cell: ({ row }) =>
+      isLoading.value
+        ? skeletonCell
+        : h(
+          'div',
+          {
+            class: cn(isRefetching.value && 'opacity-50'),
+          },
+          row.getValue('companyName'),
+        ),
   },
   {
     accessorKey: 'jobTitle',
-    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Job title'),
-    cell: ({ row }) => (isLoading.value ? skeletonCell : h('div', {
-      class: cn(isRefetching.value && 'opacity-50')
-    }, row.getValue('jobTitle'))),
+    header: ({ column }) => h('div', { class: 'w-[150px] text-slate-500' }, h(Button, {
+      class: 'h-fit !px-0',
+      size: 'sm',
+      variant: 'ghost', onClick: () => handleSortingChange(column.id)
+    }, () => ['Job title', sortingIndicator(column.id)])),
+    cell: ({ row }) =>
+      isLoading.value
+        ? skeletonCell
+        : h(
+          'div',
+          {
+            class: cn(isRefetching.value && 'opacity-50'),
+          },
+          row.getValue('jobTitle'),
+        ),
   },
   {
     accessorKey: 'dateApplied',
-    header: () => h('div', { class: 'w-[90px] text-slate-500' }, 'Date applied'),
+    header: ({ column }) => h('div', { class: 'w-[90px] text-slate-500' }, h(Button, {
+      class: 'h-fit !px-0',
+      size: 'sm',
+      variant: 'ghost',
+      onClick: () => handleSortingChange(column.id)
+    }, () => ['Date applied', sortingIndicator(column.id)])),
     cell: ({ row }) => {
       const dateFormatter = new DateFormatter(navigator.language, {
         day: '2-digit',
@@ -103,24 +140,41 @@ const columns: ColumnDef<Application>[] = [
       })
       return isLoading.value
         ? skeletonCell
-        : h('div', {
-          class: cn(isRefetching.value && 'opacity-50')
-        }, dateFormatter.format(new Date(row.getValue('dateApplied'))))
+        : h(
+          'div',
+          {
+            class: cn(isRefetching.value && 'opacity-50'),
+          },
+          dateFormatter.format(new Date(row.getValue('dateApplied'))),
+        )
     },
   },
   {
     accessorKey: 'status',
-    header: () => h('div', { class: 'w-[100px] text-slate-500' }, 'Status'),
+    header: ({ column }) => h('div', { class: 'w-[100px] text-slate-500' }, h(Button, {
+      class: 'h-fit !px-0',
+      size: 'sm',
+      variant: 'ghost',
+      onClick: () => handleSortingChange(column.id)
+    }, () => ['Status', sortingIndicator(column.id)])),
     cell: ({ row }) => {
       const status = row.getValue('status') as Status
-      return isLoading.value ? skeletonCell : h(StatusBadge, {
-        status, class: cn(isRefetching.value && 'opacity-50')
-      })
+      return isLoading.value
+        ? skeletonCell
+        : h(StatusBadge, {
+          status,
+          class: cn(isRefetching.value && 'opacity-50'),
+        })
     },
   },
   {
     accessorKey: 'salary',
-    header: () => h('div', { class: 'w-[150px] text-slate-500' }, 'Salary'),
+    header: ({ column }) => h('div', { class: 'w-[150px] text-slate-500' }, h(Button, {
+      class: 'h-fit !px-0',
+      size: 'sm',
+      variant: 'ghost',
+      onClick: () => handleSortingChange(column.id)
+    }, () => ['Salary', sortingIndicator(column.id)])),
     cell: ({ row }) => {
       const numberFormat = new Intl.NumberFormat(navigator.language, {
         style: 'currency',
@@ -138,14 +192,25 @@ const columns: ColumnDef<Application>[] = [
       if (row.original.minSalary === undefined && typeof row.original.maxSalary === 'number')
         salary = numberFormat.format(row.original.maxSalary)
 
-      return isLoading.value ? skeletonCell : h('div', {
-        class: cn(isRefetching.value && 'opacity-50')
-      }, salary)
+      return isLoading.value
+        ? skeletonCell
+        : h(
+          'div',
+          {
+            class: cn(isRefetching.value && 'opacity-50'),
+          },
+          salary,
+        )
     },
   },
   {
     accessorKey: 'isReplied',
-    header: () => h('div', { class: 'w-[50px] text-slate-500' }, 'Replied'),
+    header: ({ column }) => h('div', { class: 'w-[50px] text-slate-500' }, h(Button, {
+      class: 'h-fit !px-0',
+      size: 'sm',
+      variant: 'ghost',
+      onClick: () => handleSortingChange(column.id)
+    }, () => ['Replied', sortingIndicator(column.id)])),
     cell: ({ row }) => {
       const isReplied = row.getValue('isReplied')
 
@@ -168,10 +233,24 @@ const columns: ColumnDef<Application>[] = [
 
 const dateFormatter = new DateFormatter(navigator.language, { dateStyle: 'long' })
 
+const sortingIndicator = (columnId: string) => {
+  const value = snakeCase(columnId) as Sort
+  if (sort.value === value) return h(ArrowUp, { class: 'size-3.5' })
+  if (sort.value === `-${value}`) return h(ArrowDown, { class: 'size-3.5' })
+  return null
+}
+
 const handleFiltersClear = () => {
   companyNameOrJobTitle.value = ''
   dateApplied.value = undefined
   status.value = undefined
+}
+
+const handleSortingChange = (columnId: string) => {
+  const value = snakeCase(columnId) as Sort
+  if (sort.value === value) return sort.value = `-${value}` as Sort | undefined
+  if (sort.value === `-${value}`) return sort.value = undefined
+  sort.value = value
 }
 
 const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {

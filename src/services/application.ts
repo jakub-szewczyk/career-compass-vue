@@ -3,22 +3,24 @@ import { api } from './api'
 
 export type Status = 'IN_PROGRESS' | 'REJECTED' | 'ACCEPTED'
 
+export type Sort =
+  | 'company_name'
+  | '-company_name'
+  | 'job_title'
+  | '-job_title'
+  | 'date_applied'
+  | '-date_applied'
+  | 'status'
+  | '-status'
+  | 'salary'
+  | '-salary'
+  | 'is_replied'
+  | '-is_replied'
+
 type GetApplicationsPayload = Partial<{
   page: number
   size: number
-  sort:
-    | 'company_name'
-    | '-company_name'
-    | 'job_title'
-    | '-job_title'
-    | 'date_applied'
-    | '-date_applied'
-    | 'status'
-    | '-status'
-    | 'salary'
-    | '-salary'
-    | 'is_replied'
-    | '-is_replied'
+  sort: Sort
   company_name_or_job_title: string
   date_applied: string
   status: Status
