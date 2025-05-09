@@ -11,7 +11,7 @@ import {
 import { MoreHorizontal, SquarePen, Trash } from 'lucide-vue-next'
 
 const props = defineProps<{
-  onEditMenuItemClick: () => void,
+  onEditMenuItemClick: () => void
   onDeleteMenuItemClick: () => void
 }>()
 </script>
@@ -27,11 +27,16 @@ const props = defineProps<{
     <DropdownMenuContent align="end">
       <DropdownMenuLabel> Actions </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="flex cursor-pointer items-center gap-x-2" @click="props.onEditMenuItemClick">
+      <DropdownMenuItem
+        class="flex cursor-pointer items-center gap-x-2"
+        @click="props.onEditMenuItemClick"
+      >
         <SquarePen class="size-4 text-base" />Edit
       </DropdownMenuItem>
-      <DropdownMenuItem class="flex cursor-pointer items-center gap-x-2 text-red-900
-        hover:!text-red-900" @click="props.onDeleteMenuItemClick">
+      <DropdownMenuItem
+        class="flex cursor-pointer items-center gap-x-2 text-red-900 hover:!text-red-900"
+        @click="props.onDeleteMenuItemClick"
+      >
         <Trash class="size-4 text-red-900" />
         Delete
       </DropdownMenuItem>

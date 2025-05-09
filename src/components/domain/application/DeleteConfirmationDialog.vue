@@ -8,8 +8,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-vue-next';
+import { Button } from '@/components/ui/button'
+import { Loader2 } from 'lucide-vue-next'
 
 defineProps<{
   isPending: boolean
@@ -22,7 +22,8 @@ defineProps<{
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>Delete application</AlertDialogTitle>
-        <AlertDialogDescription>Are you sure you want to delete this application? This action cannot be undone.
+        <AlertDialogDescription
+          >Are you sure you want to delete this application? This action cannot be undone.
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
