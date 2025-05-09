@@ -41,3 +41,21 @@ type GetApplicationsResponse = PaginatedResponse<{
 
 export const getApplications = (params?: GetApplicationsPayload) =>
   api<GetApplicationsResponse>('/job-applications', { params }).then(({ data }) => data)
+
+type DeleteApplicationResponse = {
+  id: string
+  companyName: string
+  jobTitle: string
+  dateApplied: string
+  status: Status
+  isReplied: boolean
+  minSalary?: number
+  maxSalary?: number
+  jobPostingURL?: string
+  notes?: string
+}
+
+export const deleteApplication = (applicationId: string) =>
+  api
+    .delete<DeleteApplicationResponse>(`/job-applications/${applicationId}`)
+    .then(({ data }) => data)

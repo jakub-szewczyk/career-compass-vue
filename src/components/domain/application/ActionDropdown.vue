@@ -9,6 +9,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { MoreHorizontal, SquarePen, Trash } from 'lucide-vue-next'
+
+const props = defineProps<{
+  onEditMenuItemClick: () => void,
+  onDeleteMenuItemClick: () => void
+}>()
 </script>
 
 <template>
@@ -22,12 +27,11 @@ import { MoreHorizontal, SquarePen, Trash } from 'lucide-vue-next'
     <DropdownMenuContent align="end">
       <DropdownMenuLabel> Actions </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <DropdownMenuItem class="flex cursor-pointer items-center gap-x-2">
+      <DropdownMenuItem class="flex cursor-pointer items-center gap-x-2" @click="props.onEditMenuItemClick">
         <SquarePen class="size-4 text-base" />Edit
       </DropdownMenuItem>
-      <DropdownMenuItem
-        class="flex cursor-pointer items-center gap-x-2 text-red-900 hover:!text-red-900"
-      >
+      <DropdownMenuItem class="flex cursor-pointer items-center gap-x-2 text-red-900
+        hover:!text-red-900" @click="props.onDeleteMenuItemClick">
         <Trash class="size-4 text-red-900" />
         Delete
       </DropdownMenuItem>

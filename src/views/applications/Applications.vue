@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { snakeCase } from 'lodash'
-import DropdownAction from '@/components/domain/application/ActionDropdown.vue'
+import ActionDropdown from '@/components/domain/application/ActionDropdown.vue'
 import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
-import { getApplications, type Sort, type Status } from '@/services/application'
-import { keepPreviousData, useQuery } from '@tanstack/vue-query'
+import { deleteApplication, getApplications, type Sort, type Status } from '@/services/application'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { refDebounced, useTitle } from '@vueuse/core'
 import { ArrowDown, ArrowUp, Check, Plus, Search } from 'lucide-vue-next'
 import { Button } from '@/components/ui/button'
@@ -30,6 +30,7 @@ import StatusBadge from '@/components/domain/application/StatusBadge.vue'
 import { watch } from 'vue'
 import { shallowRef } from 'vue'
 import { Skeleton } from '@/components/ui/skeleton'
+import DeleteConfirmationDialog from '@/components/domain/application/DeleteConfirmationDialog.vue'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
@@ -46,6 +47,9 @@ const status = ref<Status>()
 const sort = ref<Sort>()
 const page = ref(INITIAL_PAGE)
 const size = ref(INITIAL_SIZE)
+const targetApplicationId = ref<string>()
+
+const queryClient = useQueryClient()
 
 const { data, isLoading, isRefetching } = useQuery({
   queryKey: QUERY_KEYS.APPLICATIONS({
@@ -70,6 +74,14 @@ const { data, isLoading, isRefetching } = useQuery({
   placeholderData: keepPreviousData,
 })
 
+const { mutate, isPending } = useMutation({
+  mutationFn: () => deleteApplication(targetApplicationId.value!),
+  onSuccess: () => {
+    targetApplicationId.value = undefined
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.APPLICATIONS() })
+    if (data.value?.data.length === 1 && page.value > 0) page.value--
+  }
+})
 
 watch([debouncedCompanyNameOrJobTitle, dateApplied, status, sort], () => {
   page.value = INITIAL_PAGE
@@ -227,7 +239,10 @@ const columns: ColumnDef<Application>[] = [
   {
     id: 'actions',
     header: () => h('div', { class: 'w-[40px] text-slate-500' }),
-    cell: () => h('div', { class: 'relative' }, h(DropdownAction)),
+    cell: ({ row }) => h('div', { class: 'relative' }, h(ActionDropdown, {
+      onEditMenuItemClick: () => handleEditMenuItemClick(row.original.id),
+      onDeleteMenuItemClick: () => handleDeleteMenuItemClick(row.original.id),
+    })),
   },
 ]
 
@@ -257,6 +272,12 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
   size.value = pageSize
   page.value = pageIndex
 }
+
+// TODO: Implement
+const handleEditMenuItemClick = (applicationId: string) => null
+
+const handleDeleteMenuItemClick = (applicationId: string) => targetApplicationId.value = applicationId
+
 </script>
 
 <template>
@@ -334,4 +355,7 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
       total: data?.total || 0,
       onChange: handlePaginationChange,
     }" />
+
+  <DeleteConfirmationDialog :open="!!targetApplicationId" :isPending="isPending"
+    @update:open="value => value ? null : targetApplicationId = undefined" :onConfirm="mutate" />
 </template>
