@@ -1,7 +1,11 @@
 import type { PaginatedResponse } from '@/types/common'
 import { api } from './api'
 
-export type Status = 'IN_PROGRESS' | 'REJECTED' | 'ACCEPTED'
+export enum Status {
+  InProgress = 'IN_PROGRESS',
+  Rejected = 'REJECTED',
+  Accepted = 'ACCEPTED',
+}
 
 export type Sort =
   | 'company_name'
@@ -23,7 +27,7 @@ type GetApplicationsPayload = Partial<{
   sort: Sort
   company_name_or_job_title: string
   date_applied: string
-  status: Status
+  status: `${Status}`
 }>
 
 type GetApplicationsResponse = PaginatedResponse<{
@@ -31,7 +35,7 @@ type GetApplicationsResponse = PaginatedResponse<{
   companyName: string
   jobTitle: string
   dateApplied: string
-  status: Status
+  status: `${Status}`
   isReplied: boolean
   minSalary?: number
   maxSalary?: number
@@ -42,12 +46,19 @@ type GetApplicationsResponse = PaginatedResponse<{
 export const getApplications = (params?: GetApplicationsPayload) =>
   api<GetApplicationsResponse>('/job-applications', { params }).then(({ data }) => data)
 
+type CreateApplicationPayload = {}
+
+type CreateApplicationResponse = {}
+
+export const createApplication = (payload: CreateApplicationPayload) =>
+  api.post<CreateApplicationResponse>('/job-applications', payload).then(({ data }) => data)
+
 type DeleteApplicationResponse = {
   id: string
   companyName: string
   jobTitle: string
   dateApplied: string
-  status: Status
+  status: `${Status}`
   isReplied: boolean
   minSalary?: number
   maxSalary?: number

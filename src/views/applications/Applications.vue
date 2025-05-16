@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { snakeCase } from 'lodash'
+import { ROUTES } from '@/router'
 import ActionDropdown from '@/components/domain/application/ActionDropdown.vue'
 import localeCurrency from 'locale-currency'
 import { Input } from '@/components/ui/input'
 import { QUERY_KEYS } from '@/lib/query'
-import { deleteApplication, getApplications, type Sort, type Status } from '@/services/application'
+import { deleteApplication, getApplications, Status, type Sort } from '@/services/application'
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { refDebounced, useTitle } from '@vueuse/core'
 import { ArrowDown, ArrowUp, Check, Plus, Search } from 'lucide-vue-next'
@@ -43,7 +44,7 @@ useTitle('CareerCompass - Applications')
 const companyNameOrJobTitle = shallowRef('')
 const debouncedCompanyNameOrJobTitle = refDebounced(companyNameOrJobTitle, DEBOUNCE_DELAY)
 const dateApplied = ref<DateValue>()
-const status = ref<Status>()
+const status = ref<`${Status}`>()
 const sort = ref<Sort>()
 const page = ref(INITIAL_PAGE)
 const size = ref(INITIAL_SIZE)
@@ -198,7 +199,7 @@ const columns: ColumnDef<Application>[] = [
         ),
       ),
     cell: ({ row }) => {
-      const status = row.getValue('status') as Status
+      const status = row.getValue('status') as `${Status}`
       return isLoading.value
         ? skeletonCell
         : h(StatusBadge, {
@@ -336,12 +337,11 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
   <p class="text-sm">
     All your job applications, all in one place. Track, manage, and conquer your career goals!
   </p>
-
   <div class="mt-14 mb-4 flex flex-wrap justify-between gap-4">
     <div class="flex grow-[1] flex-col flex-wrap gap-4 sm:flex-row">
       <div class="relative w-full items-center sm:max-w-[270px]">
         <Input
-          class="bg-white pl-9 placeholder:text-sm placeholder:font-light placeholder:text-slate-400"
+          class="bg-white pl-9 placeholder:text-sm placeholder:font-light"
           placeholder="Filter by company name or job title"
           v-model="companyNameOrJobTitle"
         />
@@ -349,7 +349,6 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
           <Search class="size-3.5 text-slate-400" />
         </span>
       </div>
-
       <Popover>
         <PopoverTrigger as-child>
           <Button
@@ -374,7 +373,6 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
           <Calendar v-model="dateApplied" initial-focus />
         </PopoverContent>
       </Popover>
-
       <Select v-model="status">
         <SelectTrigger
           class="w-full bg-white font-light sm:max-w-[150px] [[data-placeholder]]:!text-slate-400"
@@ -385,19 +383,18 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="IN_PROGRESS">
-              <StatusBadge status="IN_PROGRESS" />
+            <SelectItem :value="Status.InProgress">
+              <StatusBadge :status="Status.InProgress" />
             </SelectItem>
-            <SelectItem value="REJECTED">
-              <StatusBadge status="REJECTED" />
+            <SelectItem :value="Status.Rejected">
+              <StatusBadge :status="Status.Rejected" />
             </SelectItem>
-            <SelectItem value="ACCEPTED">
-              <StatusBadge status="ACCEPTED" />
+            <SelectItem :value="Status.Accepted">
+              <StatusBadge :status="Status.Accepted" />
             </SelectItem>
           </SelectGroup>
         </SelectContent>
       </Select>
-
       <Button
         class="bg-white"
         variant="outline"
@@ -407,10 +404,13 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
         <X /> Clear
       </Button>
     </div>
-
-    <Button class="w-full sm:w-fit"> <Plus /> New application </Button>
+    <Button class="w-full sm:w-fit" asChild>
+      <RouterLink :to="ROUTES.APPLICATION_DETAILS.path">
+        <Plus />
+        New application
+      </RouterLink>
+    </Button>
   </div>
-
   <DataTable
     class="bg-white [&_td]:px-4 [&_td]:py-3 [&_th]:px-4 [&_th]:py-3"
     :columns="columns"
@@ -422,7 +422,6 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
       onChange: handlePaginationChange,
     }"
   />
-
   <DeleteConfirmationDialog
     :open="!!targetApplicationId"
     :isPending="isPending"

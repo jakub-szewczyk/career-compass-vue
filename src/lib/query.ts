@@ -7,7 +7,7 @@ export const QUERY_KEYS = {
   APPLICATIONS: (params?: {
     companyNameOrJobTitle: Ref<string, string>
     dateApplied: Ref<DateValue | undefined, DateValue | undefined>
-    status: Ref<Status | undefined, Status | undefined>
+    status: Ref<`${Status}` | undefined, `${Status}` | undefined>
     sort: Ref<Sort | undefined, Sort | undefined>
     page: Ref<number, number>
     size: Ref<number, number>

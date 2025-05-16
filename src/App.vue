@@ -23,6 +23,7 @@ const isSidebarVisible = computed(() =>
       ROUTES.RESUMES.path,
       ROUTES.INTERVIEWS.path,
       ROUTES.APPLICATIONS.path,
+      ROUTES.APPLICATION_DETAILS.path,
       ROUTES.SETTINGS.path,
     ] as string[]
   ).includes(route.path),

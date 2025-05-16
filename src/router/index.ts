@@ -1,3 +1,4 @@
+import ApplicationDetails from '@/views/applications/ApplicationDetails.vue'
 import Applications from '@/views/applications/Applications.vue'
 import ForgotPassword from '@/views/auth/ForgotPassword.vue'
 import ResetPassword from '@/views/auth/ResetPassword.vue'
@@ -38,6 +39,12 @@ export const ROUTES = {
     name: 'Applications',
     path: '/applications',
     component: Applications,
+    meta: { isPrivate: true },
+  },
+  APPLICATION_DETAILS: {
+    name: 'Application details',
+    path: '/applications/new',
+    component: ApplicationDetails,
     meta: { isPrivate: true },
   },
   SETTINGS: {

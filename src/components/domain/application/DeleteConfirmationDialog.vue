@@ -27,7 +27,7 @@ defineProps<{
         </AlertDialogDescription>
       </AlertDialogHeader>
       <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
+        <AlertDialogCancel class="mt-0">Cancel</AlertDialogCancel>
         <Button variant="destructive" @click="onConfirm" :disabled="isPending">
           <Loader2 class="mr-2 size-4 animate-spin" v-if="isPending" />
           Yes, delete
