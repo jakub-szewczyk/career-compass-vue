@@ -4,7 +4,6 @@ import {
   BreadcrumbItem,
   BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb'
 import { Menu } from 'lucide-vue-next'
@@ -45,7 +44,7 @@ const initials = computed(() =>
       <Menu />
     </Button>
     <div v-if="!isMobile">
-      <div v-if="route.path === ROUTES.APPLICATION_DETAILS.path">
+      <div v-if="route.name === ROUTES.CREATE_APPLICATION.name">
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
@@ -56,7 +55,32 @@ const initials = computed(() =>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <RouterLink :to="ROUTES.APPLICATION_DETAILS.path">New application</RouterLink>
+                <RouterLink :to="ROUTES.CREATE_APPLICATION.path">New application</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
+      <div v-if="route.name === ROUTES.UPDATE_APPLICATION.name">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink :to="ROUTES.APPLICATIONS.path">Job applications</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink
+                  :to="{
+                    name: ROUTES.UPDATE_APPLICATION.name,
+                    params: {
+                      applicationId: route.params.applicationId,
+                    },
+                  }"
+                  >Edit application</RouterLink
+                >
               </BreadcrumbLink>
             </BreadcrumbItem>
           </BreadcrumbList>

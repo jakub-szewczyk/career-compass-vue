@@ -5,7 +5,7 @@ import { SidebarProvider } from './components/ui/sidebar'
 import Sidebar from '@/components/navigation/Sidebar.vue'
 import Navbar from '@/components/navigation/Navbar.vue'
 import { ROUTES } from './router'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type RouteRecordNameGeneric } from 'vue-router'
 import { computed, watch } from 'vue'
 import { useLocalStorage } from '@vueuse/core'
 import { api, type ApiError } from './services/api'
@@ -19,14 +19,15 @@ const router = useRouter()
 const isSidebarVisible = computed(() =>
   (
     [
-      ROUTES.DASHBOARD.path,
-      ROUTES.RESUMES.path,
-      ROUTES.INTERVIEWS.path,
-      ROUTES.APPLICATIONS.path,
-      ROUTES.APPLICATION_DETAILS.path,
-      ROUTES.SETTINGS.path,
-    ] as string[]
-  ).includes(route.path),
+      ROUTES.DASHBOARD.name,
+      ROUTES.RESUMES.name,
+      ROUTES.INTERVIEWS.name,
+      ROUTES.APPLICATIONS.name,
+      ROUTES.CREATE_APPLICATION.name,
+      ROUTES.UPDATE_APPLICATION.name,
+      ROUTES.SETTINGS.name,
+    ] as RouteRecordNameGeneric[]
+  ).includes(route.name),
 )
 
 const queryClient = useQueryClient()

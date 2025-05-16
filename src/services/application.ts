@@ -7,6 +7,19 @@ export enum Status {
   Accepted = 'ACCEPTED',
 }
 
+type Application = {
+  id: string
+  companyName: string
+  jobTitle: string
+  dateApplied: string
+  status: `${Status}`
+  isReplied: boolean
+  minSalary?: number
+  maxSalary?: number
+  jobPostingURL?: string
+  notes?: string
+}
+
 export type Sort =
   | 'company_name'
   | '-company_name'
@@ -30,41 +43,31 @@ type GetApplicationsPayload = Partial<{
   status: `${Status}`
 }>
 
-type GetApplicationsResponse = PaginatedResponse<{
-  id: string
-  companyName: string
-  jobTitle: string
-  dateApplied: string
-  status: `${Status}`
-  isReplied: boolean
-  minSalary?: number
-  maxSalary?: number
-  jobPostingURL?: string
-  notes?: string
-}>
+type GetApplicationsResponse = PaginatedResponse<Application>
 
 export const getApplications = (params?: GetApplicationsPayload) =>
   api<GetApplicationsResponse>('/job-applications', { params }).then(({ data }) => data)
 
-type CreateApplicationPayload = {}
+type GetApplicationDetailsResponse = Application
 
-type CreateApplicationResponse = {}
+export const getApplicationDetails = (applicationId: string) =>
+  api<GetApplicationDetailsResponse>(`/job-applications/${applicationId}`).then(({ data }) => data)
+
+type CreateApplicationPayload = Omit<Application, 'id' | 'isReplied'>
+
+type CreateApplicationResponse = Application
 
 export const createApplication = (payload: CreateApplicationPayload) =>
   api.post<CreateApplicationResponse>('/job-applications', payload).then(({ data }) => data)
 
-type DeleteApplicationResponse = {
-  id: string
-  companyName: string
-  jobTitle: string
-  dateApplied: string
-  status: `${Status}`
-  isReplied: boolean
-  minSalary?: number
-  maxSalary?: number
-  jobPostingURL?: string
-  notes?: string
-}
+type UpdateApplicationPayload = Application
+
+type UpdateApplicationResponse = Application
+
+export const updateApplication = ({ id, ...payload }: UpdateApplicationPayload) =>
+  api.put<UpdateApplicationResponse>(`/job-applications/${id}`, payload).then(({ data }) => data)
+
+type DeleteApplicationResponse = Application
 
 export const deleteApplication = (applicationId: string) =>
   api

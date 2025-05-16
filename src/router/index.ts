@@ -41,10 +41,17 @@ export const ROUTES = {
     component: Applications,
     meta: { isPrivate: true },
   },
-  APPLICATION_DETAILS: {
-    name: 'Application details',
+  CREATE_APPLICATION: {
+    name: 'Create application',
     path: '/applications/new',
     component: ApplicationDetails,
+    meta: { isPrivate: true },
+  },
+  UPDATE_APPLICATION: {
+    name: 'Update application',
+    path: '/applications/:applicationId/edit',
+    component: ApplicationDetails,
+    props: { isUpdating: true },
     meta: { isPrivate: true },
   },
   SETTINGS: {

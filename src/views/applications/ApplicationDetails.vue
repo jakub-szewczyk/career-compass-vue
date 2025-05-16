@@ -13,17 +13,22 @@ import { FormField, FormControl, FormItem, FormLabel, FormMessage } from '@/comp
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/router'
-import { useMutation, useQueryClient } from '@tanstack/vue-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query'
 import { toTypedSchema } from '@vee-validate/zod'
 import { CalendarIcon, Loader2 } from 'lucide-vue-next'
 import { useForm } from 'vee-validate'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { z } from 'zod'
 import { computed } from 'vue'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Calendar } from '@/components/ui/calendar'
 import { toDate } from 'reka-ui/date'
-import { createApplication, Status } from '@/services/application'
+import {
+  createApplication,
+  getApplicationDetails,
+  Status,
+  updateApplication,
+} from '@/services/application'
 import StatusBadge from '@/components/domain/application/StatusBadge.vue'
 import {
   Select,
@@ -34,6 +39,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { QUERY_KEYS } from '@/lib/query'
+import { useTitle } from '@vueuse/core'
+import { watch } from 'vue'
+import { Skeleton } from '@/components/ui/skeleton'
+
+const props = defineProps({ isUpdating: { default: false } })
+
+useTitle(`CareerCompass - ${props.isUpdating ? 'Edit' : 'New'} application`)
 
 const VALIDATION_MESSAGES = {
   REQUIRED_COMPANY_NAME: 'Please enter the company name',
@@ -44,12 +56,29 @@ const VALIDATION_MESSAGES = {
   INVALID_JOB_POSTING_URL: 'Please enter a valid URL',
 }
 
+const route = useRoute()
 const router = useRouter()
+
+const applicationId = route.params.applicationId as string
 
 const queryClient = useQueryClient()
 
-const { mutate, isPending } = useMutation({
+const { data, isLoading } = useQuery({
+  queryKey: QUERY_KEYS.APPLICATION_DETAILS(applicationId),
+  queryFn: () => getApplicationDetails(applicationId),
+  enabled: props.isUpdating,
+})
+
+const { mutate: createApplicationMutate, isPending: isCreatingApplication } = useMutation({
   mutationFn: createApplication,
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.APPLICATIONS() })
+    router.push(ROUTES.APPLICATIONS.path)
+  },
+})
+
+const { mutate: updateApplicationMutate, isPending: isUpdatingApplication } = useMutation({
+  mutationFn: updateApplication,
   onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: QUERY_KEYS.APPLICATIONS() })
     router.push(ROUTES.APPLICATIONS.path)
@@ -81,10 +110,28 @@ const validationSchema = toTypedSchema(
 
 const form = useForm({
   validationSchema,
-  initialValues: {
-    status: Status.InProgress,
-  },
+  initialValues: { status: Status.InProgress },
 })
+
+watch(
+  data,
+  () => {
+    if (props.isUpdating && data.value)
+      form.resetForm({
+        values: {
+          companyName: data.value?.companyName,
+          jobTitle: data.value?.jobTitle,
+          dateApplied: data.value?.dateApplied.split('T')[0], // TODO: Format date properly
+          status: data.value?.status as Status,
+          minSalary: data.value?.minSalary,
+          maxSalary: data.value?.maxSalary,
+          jobPostingURL: data.value?.jobPostingURL,
+          notes: data.value?.notes,
+        },
+      })
+  },
+  { immediate: true },
+)
 
 const dateApplied = computed({
   get: () => (form.values.dateApplied ? parseDate(form.values.dateApplied) : undefined),
@@ -94,15 +141,22 @@ const dateApplied = computed({
 const dateFormatter = new DateFormatter(navigator.language, { dateStyle: 'long' })
 
 const handleSubmit = form.handleSubmit((values) =>
-  mutate({
-    ...values,
-    dateApplied: new Date(values.dateApplied).toISOString(),
-  }),
+  props.isUpdating
+    ? updateApplicationMutate({
+        id: applicationId,
+        ...values,
+        isReplied: false, // TODO
+        dateApplied: new Date(values.dateApplied).toISOString(),
+      })
+    : createApplicationMutate({
+        ...values,
+        dateApplied: new Date(values.dateApplied).toISOString(),
+      }),
 )
 </script>
 
 <template>
-  <h1 class="text-xl font-semibold">New application</h1>
+  <h1 class="text-xl font-semibold">{{ props.isUpdating ? 'Edit' : 'New' }} application</h1>
   <p class="text-sm">Stay on top of your job search by logging your application details</p>
   <Card class="mt-14">
     <CardContent>
@@ -124,7 +178,8 @@ const handleSubmit = form.handleSubmit((values) =>
                   ></span
                 ></FormLabel
               >
-              <FormControl>
+              <Skeleton class="h-9 w-full" v-if="isLoading" />
+              <FormControl v-else>
                 <Input
                   class="placeholder:font-light"
                   type="text"
@@ -150,7 +205,8 @@ const handleSubmit = form.handleSubmit((values) =>
                   ></span
                 ></FormLabel
               >
-              <FormControl>
+              <Skeleton class="h-9 w-full" v-if="isLoading" />
+              <FormControl v-else>
                 <Input
                   class="placeholder:font-light"
                   type="text"
@@ -180,7 +236,8 @@ const handleSubmit = form.handleSubmit((values) =>
               >
               <Popover>
                 <PopoverTrigger asChild>
-                  <FormControl>
+                  <Skeleton class="h-9 w-full" v-if="isLoading" />
+                  <FormControl v-else>
                     <Button
                       :class="
                         cn(
@@ -235,7 +292,8 @@ const handleSubmit = form.handleSubmit((values) =>
                 ></FormLabel
               >
               <Select v-bind="componentField">
-                <FormControl>
+                <Skeleton class="h-9 w-full" v-if="isLoading" />
+                <FormControl v-else>
                   <SelectTrigger class="w-full bg-white font-light">
                     <SelectValue>
                       <StatusBadge :status="form.values.status!" />
@@ -264,7 +322,8 @@ const handleSubmit = form.handleSubmit((values) =>
           <FormField name="minSalary" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
               <FormLabel>Min salary</FormLabel>
-              <FormControl>
+              <Skeleton class="h-9 w-full" v-if="isLoading" />
+              <FormControl v-else>
                 <Input
                   class="placeholder:font-light"
                   type="number"
@@ -279,7 +338,8 @@ const handleSubmit = form.handleSubmit((values) =>
           <FormField name="maxSalary" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
               <FormLabel>Max salary</FormLabel>
-              <FormControl>
+              <Skeleton class="h-9 w-full" v-if="isLoading" />
+              <FormControl v-else>
                 <Input
                   class="placeholder:font-light"
                   type="number"
@@ -295,7 +355,8 @@ const handleSubmit = form.handleSubmit((values) =>
         <FormField name="jobPostingURL" v-slot="{ componentField }">
           <FormItem>
             <FormLabel>Job posting URL</FormLabel>
-            <FormControl>
+            <Skeleton class="h-9 w-full" v-if="isLoading" />
+            <FormControl v-else>
               <Input
                 class="placeholder:font-light"
                 type="text"
@@ -309,7 +370,8 @@ const handleSubmit = form.handleSubmit((values) =>
         <FormField name="notes" v-slot="{ componentField }">
           <FormItem>
             <FormLabel>Notes</FormLabel>
-            <FormControl>
+            <Skeleton class="h-16 w-full" v-if="isLoading" />
+            <FormControl v-else>
               <Textarea
                 class="resize-none"
                 placeholder="e.g., Follow up in two weeks"
@@ -328,8 +390,15 @@ const handleSubmit = form.handleSubmit((values) =>
           >
             <RouterLink :to="ROUTES.APPLICATIONS.path">Cancel</RouterLink>
           </Button>
-          <Button class="w-full md:w-auto" type="submit" :disabled="isPending">
-            <Loader2 class="mr-2 size-4 animate-spin" v-if="isPending" />
+          <Button
+            class="w-full md:w-auto"
+            type="submit"
+            :disabled="isLoading || isCreatingApplication || isUpdatingApplication"
+          >
+            <Loader2
+              class="mr-2 size-4 animate-spin"
+              v-if="isCreatingApplication || isUpdatingApplication"
+            />
             Submit
           </Button>
         </div>

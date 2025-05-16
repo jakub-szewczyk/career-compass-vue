@@ -32,6 +32,7 @@ import { watch } from 'vue'
 import { shallowRef } from 'vue'
 import { Skeleton } from '@/components/ui/skeleton'
 import DeleteConfirmationDialog from '@/components/domain/application/DeleteConfirmationDialog.vue'
+import { useRouter } from 'vue-router'
 
 type Application = Awaited<ReturnType<typeof getApplications>>['data'][number]
 
@@ -40,6 +41,8 @@ const INITIAL_PAGE = 0
 const INITIAL_SIZE = 10
 
 useTitle('CareerCompass - Applications')
+
+const router = useRouter()
 
 const companyNameOrJobTitle = shallowRef('')
 const debouncedCompanyNameOrJobTitle = refDebounced(companyNameOrJobTitle, DEBOUNCE_DELAY)
@@ -325,8 +328,11 @@ const handlePaginationChange = ({ pageSize, pageIndex }: PaginationState) => {
   page.value = pageIndex
 }
 
-// TODO: Implement
-const handleEditMenuItemClick = (applicationId: string) => null
+const handleEditMenuItemClick = (applicationId: string) =>
+  router.push({
+    name: ROUTES.UPDATE_APPLICATION.name,
+    params: { applicationId },
+  })
 
 const handleDeleteMenuItemClick = (applicationId: string) =>
   (targetApplicationId.value = applicationId)
@@ -405,7 +411,7 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
       </Button>
     </div>
     <Button class="w-full sm:w-fit" asChild>
-      <RouterLink :to="ROUTES.APPLICATION_DETAILS.path">
+      <RouterLink :to="ROUTES.CREATE_APPLICATION.path">
         <Plus />
         New application
       </RouterLink>

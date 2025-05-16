@@ -12,4 +12,5 @@ export const QUERY_KEYS = {
     page: Ref<number, number>
     size: Ref<number, number>
   }) => ['applications', ...(params ? [params] : [])],
+  APPLICATION_DETAILS: (applicationId: string) => ['applications', applicationId],
 }
