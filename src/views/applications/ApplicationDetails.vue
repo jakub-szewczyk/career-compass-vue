@@ -234,10 +234,10 @@ const handleSubmit = form.handleSubmit((values) =>
                   ></span
                 ></FormLabel
               >
-              <Popover>
+              <Skeleton class="h-9 w-full" v-if="isLoading" />
+              <Popover v-else>
                 <PopoverTrigger asChild>
-                  <Skeleton class="h-9 w-full" v-if="isLoading" />
-                  <FormControl v-else>
+                  <FormControl>
                     <Button
                       :class="
                         cn(
