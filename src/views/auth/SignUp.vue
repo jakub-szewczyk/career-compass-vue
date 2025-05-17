@@ -9,10 +9,28 @@ import FormMessage from '@/components/ui/form/FormMessage.vue'
 import { Card, CardContent } from '@/components/ui/card'
 import { MIN_PASSWORD_LENGTH } from '@/modules/auth'
 import AuthLayout from '@/components/layout/AuthLayout.vue'
-import { useTitle } from '@vueuse/core'
+import { useLocalStorage, useTitle } from '@vueuse/core'
 import { ROUTES } from '@/router'
+import { useRoute, useRouter } from 'vue-router'
+import { useMutation } from '@tanstack/vue-query'
+import { signUp } from '@/services/auth'
+import { Loader2 } from 'lucide-vue-next'
 
 useTitle('CareerCompass - Sign up')
+
+const route = useRoute()
+const router = useRouter()
+
+const token = useLocalStorage<string | null>('token', null)
+
+const { mutate, isPending } = useMutation({
+  mutationFn: signUp,
+  onSuccess: (data) => {
+    token.value = data.token
+    const path = (route.query.redirect || '/') as string
+    router.push(path)
+  },
+})
 
 const validationSchema = toTypedSchema(
   z
@@ -43,9 +61,7 @@ const validationSchema = toTypedSchema(
 
 const form = useForm({ validationSchema })
 
-const handleSubmit = form.handleSubmit((values) => {
-  console.log('values', values)
-})
+const handleSubmit = form.handleSubmit((values) => mutate(values))
 </script>
 
 <template>
@@ -104,7 +120,10 @@ const handleSubmit = form.handleSubmit((values) => {
               <FormMessage />
             </FormItem>
           </FormField>
-          <Button type="submit">Sign up</Button>
+          <Button type="submit" :disabled="isPending">
+            <Loader2 class="mr-2 size-4 animate-spin" v-if="isPending" />
+            Sign up
+          </Button>
           <p class="text-center text-sm text-slate-500">
             Already have an account?
             <RouterLink
