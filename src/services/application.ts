@@ -13,7 +13,7 @@ type Application = {
   jobTitle: string
   dateApplied: string
   status: `${Status}`
-  isReplied: boolean
+  isReplied?: boolean
   minSalary?: number
   maxSalary?: number
   jobPostingURL?: string

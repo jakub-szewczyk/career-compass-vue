@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Checkbox } from '@/components/ui/checkbox'
 import { Textarea } from '@/components/ui/textarea'
 import {
   CalendarDate,
@@ -9,7 +10,7 @@ import {
 } from '@internationalized/date'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { FormField, FormControl, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { FormField, FormControl, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { ROUTES } from '@/router'
@@ -97,6 +98,7 @@ const validationSchema = toTypedSchema(
     status: z.nativeEnum(Status, {
       required_error: VALIDATION_MESSAGES.REQUIRED_STATUS,
     }),
+    isReplied: z.boolean().default(false).optional(),
     minSalary: z.coerce.number().min(0, VALIDATION_MESSAGES.MIN_SALARY).optional(),
     maxSalary: z.coerce.number().min(0, VALIDATION_MESSAGES.MIN_SALARY).optional(),
     jobPostingURL: z
@@ -123,6 +125,7 @@ watch(
           jobTitle: data.value?.jobTitle,
           dateApplied: data.value?.dateApplied.split('T')[0], // TODO: Format date properly
           status: data.value?.status as Status,
+          isReplied: data.value.isReplied,
           minSalary: data.value?.minSalary,
           maxSalary: data.value?.maxSalary,
           jobPostingURL: data.value?.jobPostingURL,
@@ -143,15 +146,14 @@ const dateFormatter = new DateFormatter(navigator.language, { dateStyle: 'long' 
 const handleSubmit = form.handleSubmit((values) =>
   props.isUpdating
     ? updateApplicationMutate({
-        id: applicationId,
-        ...values,
-        isReplied: false, // TODO
-        dateApplied: new Date(values.dateApplied).toISOString(),
-      })
+      id: applicationId,
+      ...values,
+      dateApplied: new Date(values.dateApplied).toISOString(),
+    })
     : createApplicationMutate({
-        ...values,
-        dateApplied: new Date(values.dateApplied).toISOString(),
-      }),
+      ...values,
+      dateApplied: new Date(values.dateApplied).toISOString(),
+    }),
 )
 </script>
 
@@ -165,54 +167,30 @@ const handleSubmit = form.handleSubmit((values) =>
         <div class="flex flex-col items-start gap-4 md:flex-row">
           <FormField name="companyName" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
-              <FormLabel
-                ><span
-                  >Company<span
-                    :class="
-                      cn(
-                        'text-destructive',
-                        form.errors.value.companyName && 'text-destructive-foreground',
-                      )
-                    "
-                    >*</span
-                  ></span
-                ></FormLabel
-              >
+              <FormLabel><span>Company<span :class="cn(
+                'text-destructive',
+                form.errors.value.companyName && 'text-destructive-foreground',
+              )
+                ">*</span></span></FormLabel>
               <Skeleton class="h-9 w-full" v-if="isLoading" />
               <FormControl v-else>
-                <Input
-                  class="placeholder:font-light"
-                  type="text"
-                  placeholder="e.g., Evil Corp Inc."
-                  v-bind="componentField"
-                />
+                <Input class="placeholder:font-light" type="text" placeholder="e.g., Evil Corp Inc."
+                  v-bind="componentField" />
               </FormControl>
               <FormMessage />
             </FormItem>
           </FormField>
           <FormField name="jobTitle" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
-              <FormLabel
-                ><span
-                  >Job title<span
-                    :class="
-                      cn(
-                        'text-destructive',
-                        form.errors.value.jobTitle && 'text-destructive-foreground',
-                      )
-                    "
-                    >*</span
-                  ></span
-                ></FormLabel
-              >
+              <FormLabel><span>Job title<span :class="cn(
+                'text-destructive',
+                form.errors.value.jobTitle && 'text-destructive-foreground',
+              )
+                ">*</span></span></FormLabel>
               <Skeleton class="h-9 w-full" v-if="isLoading" />
               <FormControl v-else>
-                <Input
-                  class="placeholder:font-light"
-                  type="text"
-                  placeholder="e.g., Software Engineer"
-                  v-bind="componentField"
-                />
+                <Input class="placeholder:font-light" type="text" placeholder="e.g., Software Engineer"
+                  v-bind="componentField" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -221,32 +199,20 @@ const handleSubmit = form.handleSubmit((values) =>
         <div class="flex flex-col items-start gap-4 md:flex-row">
           <FormField name="dateApplied">
             <FormItem class="flex w-full flex-col md:w-1/2">
-              <FormLabel
-                ><span
-                  >Date applied<span
-                    :class="
-                      cn(
-                        'text-destructive',
-                        form.errors.value.dateApplied && 'text-destructive-foreground',
-                      )
-                    "
-                    >*</span
-                  ></span
-                ></FormLabel
-              >
+              <FormLabel><span>Date applied<span :class="cn(
+                'text-destructive',
+                form.errors.value.dateApplied && 'text-destructive-foreground',
+              )
+                ">*</span></span></FormLabel>
               <Skeleton class="h-9 w-full" v-if="isLoading" />
               <Popover v-else>
                 <PopoverTrigger asChild>
                   <FormControl>
-                    <Button
-                      :class="
-                        cn(
-                          'justify-start bg-white !font-light hover:bg-white',
-                          !dateApplied && 'text-slate-400 hover:text-slate-400',
-                        )
-                      "
-                      variant="outline"
-                    >
+                    <Button :class="cn(
+                      'justify-start bg-white !font-light hover:bg-white',
+                      !dateApplied && 'text-slate-400 hover:text-slate-400',
+                    )
+                      " variant="outline">
                       <CalendarIcon class="mr-1 size-3.5" />
                       <span>{{
                         dateApplied ? dateFormatter.format(toDate(dateApplied)) : 'MM/DD/YYYY' /*
@@ -257,20 +223,14 @@ const handleSubmit = form.handleSubmit((values) =>
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent class="w-auto p-0">
-                  <Calendar
-                    v-model="dateApplied"
-                    calendarLabel="Date
-                  applied"
-                    initialFocus
-                    :minValue="new CalendarDate(1900, 1, 1)"
-                    :maxValue="today(getLocalTimeZone())"
+                  <Calendar v-model="dateApplied" calendarLabel="Date
+                  applied" initialFocus :minValue="new CalendarDate(1900, 1, 1)" :maxValue="today(getLocalTimeZone())"
                     @update:modelValue="
                       (value) =>
                         value
                           ? form.setFieldValue('dateApplied', value.toString())
                           : form.setFieldValue('dateApplied', undefined)
-                    "
-                  />
+                    " />
                 </PopoverContent>
               </Popover>
               <FormMessage />
@@ -278,19 +238,11 @@ const handleSubmit = form.handleSubmit((values) =>
           </FormField>
           <FormField name="status" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
-              <FormLabel
-                ><span
-                  >Status<span
-                    :class="
-                      cn(
-                        'text-destructive',
-                        form.errors.value.status && 'text-destructive-foreground',
-                      )
-                    "
-                    >*</span
-                  ></span
-                ></FormLabel
-              >
+              <FormLabel><span>Status<span :class="cn(
+                'text-destructive',
+                form.errors.value.status && 'text-destructive-foreground',
+              )
+                ">*</span></span></FormLabel>
               <Select v-bind="componentField">
                 <Skeleton class="h-9 w-full" v-if="isLoading" />
                 <FormControl v-else>
@@ -318,19 +270,31 @@ const handleSubmit = form.handleSubmit((values) =>
             </FormItem>
           </FormField>
         </div>
+        <div class="flex flex-col items-start gap-4 md:flex-row" v-if="props.isUpdating">
+          <FormField name="isReplied" type="checkbox" v-slot="{ value, handleChange }">
+            <FormItem class="flex">
+              <FormControl>
+                <Skeleton class="size-4 rounded-[4px]" v-if="isLoading" />
+                <Checkbox :model-value="value" @update:model-value="handleChange" v-else />
+              </FormControl>
+              <div class="space-y-1.5 ">
+                <FormLabel>Replied</FormLabel>
+                <FormDescription>
+                  Check if you received a reply to your application
+                </FormDescription>
+                <FormMessage />
+              </div>
+            </FormItem>
+          </FormField>
+        </div>
         <div class="flex flex-col items-start gap-4 md:flex-row">
           <FormField name="minSalary" v-slot="{ componentField }">
             <FormItem class="w-full md:w-1/2">
               <FormLabel>Min salary</FormLabel>
               <Skeleton class="h-9 w-full" v-if="isLoading" />
               <FormControl v-else>
-                <Input
-                  class="placeholder:font-light"
-                  type="number"
-                  min="0"
-                  placeholder="$50,000"
-                  v-bind="componentField"
-                />
+                <Input class="placeholder:font-light" type="number" min="0" placeholder="$50,000"
+                  v-bind="componentField" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -340,13 +304,8 @@ const handleSubmit = form.handleSubmit((values) =>
               <FormLabel>Max salary</FormLabel>
               <Skeleton class="h-9 w-full" v-if="isLoading" />
               <FormControl v-else>
-                <Input
-                  class="placeholder:font-light"
-                  type="number"
-                  min="0"
-                  placeholder="$70,000"
-                  v-bind="componentField"
-                />
+                <Input class="placeholder:font-light" type="number" min="0" placeholder="$70,000"
+                  v-bind="componentField" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -357,12 +316,8 @@ const handleSubmit = form.handleSubmit((values) =>
             <FormLabel>Job posting URL</FormLabel>
             <Skeleton class="h-9 w-full" v-if="isLoading" />
             <FormControl v-else>
-              <Input
-                class="placeholder:font-light"
-                type="text"
-                placeholder="e.g., https://glassbore.com/jobs/swe420692137"
-                v-bind="componentField"
-              />
+              <Input class="placeholder:font-light" type="text"
+                placeholder="e.g., https://glassbore.com/jobs/swe420692137" v-bind="componentField" />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -372,33 +327,18 @@ const handleSubmit = form.handleSubmit((values) =>
             <FormLabel>Notes</FormLabel>
             <Skeleton class="h-16 w-full" v-if="isLoading" />
             <FormControl v-else>
-              <Textarea
-                class="resize-none"
-                placeholder="e.g., Follow up in two weeks"
-                v-bind="componentField"
-              />
+              <Textarea class="resize-none" placeholder="e.g., Follow up in two weeks" v-bind="componentField" />
             </FormControl>
             <FormMessage />
           </FormItem>
         </FormField>
         <div class="mt-2 flex flex-col-reverse flex-wrap gap-2 md:flex-row">
-          <Button
-            class="text-primary hover:text-primary w-full md:w-auto"
-            type="button"
-            variant="ghost"
-            asChild
-          >
+          <Button class="text-primary hover:text-primary w-full md:w-auto" type="button" variant="ghost" asChild>
             <RouterLink :to="ROUTES.APPLICATIONS.path">Cancel</RouterLink>
           </Button>
-          <Button
-            class="w-full md:w-auto"
-            type="submit"
-            :disabled="isLoading || isCreatingApplication || isUpdatingApplication"
-          >
-            <Loader2
-              class="mr-2 size-4 animate-spin"
-              v-if="isCreatingApplication || isUpdatingApplication"
-            />
+          <Button class="w-full md:w-auto" type="submit"
+            :disabled="isLoading || isCreatingApplication || isUpdatingApplication">
+            <Loader2 class="mr-2 size-4 animate-spin" v-if="isCreatingApplication || isUpdatingApplication" />
             Submit
           </Button>
         </div>
