@@ -39,8 +39,11 @@ const props = defineProps<{
     page: number
     size: number
     total: number
-    onChange: (paginationState: PaginationState) => void
   }
+}>()
+
+const emit = defineEmits<{
+  (e: 'change', paginationState: PaginationState): void
 }>()
 
 const table = useVueTable({
@@ -60,7 +63,8 @@ const table = useVueTable({
   },
   onPaginationChange: (updater) => {
     if (typeof updater !== 'function') return
-    props.pagination.onChange(
+    emit(
+      'change',
       updater({
         pageSize: props.pagination.size,
         pageIndex: props.pagination.page,

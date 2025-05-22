@@ -13,7 +13,10 @@ import { Loader2 } from 'lucide-vue-next'
 
 defineProps<{
   isPending: boolean
-  onConfirm: () => void
+}>()
+
+const emit = defineEmits<{
+  (e: 'confirm'): void
 }>()
 </script>
 
@@ -28,7 +31,7 @@ defineProps<{
       </AlertDialogHeader>
       <AlertDialogFooter>
         <AlertDialogCancel class="mt-0">Cancel</AlertDialogCancel>
-        <Button variant="destructive" @click="onConfirm" :disabled="isPending">
+        <Button variant="destructive" @click="() => emit('confirm')" :disabled="isPending">
           <Loader2 class="mr-2 size-4 animate-spin" v-if="isPending" />
           Yes, delete
         </Button>

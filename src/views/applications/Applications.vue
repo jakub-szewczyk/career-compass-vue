@@ -425,13 +425,13 @@ const handleDeleteMenuItemClick = (applicationId: string) =>
       page,
       size,
       total: data?.total || 0,
-      onChange: handlePaginationChange,
     }"
+    @change="handlePaginationChange"
   />
   <DeleteConfirmationDialog
     :open="!!targetApplicationId"
     :isPending="isPending"
-    @update:open="(value) => (value ? null : (targetApplicationId = undefined))"
-    :onConfirm="mutate"
+    @update:open="(value: boolean) => (value ? null : (targetApplicationId = undefined))"
+    @confirm="mutate"
   />
 </template>
