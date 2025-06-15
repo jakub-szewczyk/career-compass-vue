@@ -1,0 +1,421 @@
+<script setup lang="ts">
+import { Button } from '@/components/ui/button'
+import { intersection, uniqueId } from 'lodash'
+import { nextTick } from 'vue'
+import { onMounted } from 'vue'
+import { ref, watch, reactive } from 'vue'
+import Konva from 'konva'
+import type { KonvaEventObject } from 'konva/lib/Node'
+import { computed } from 'vue'
+import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import type { Box, Shape } from '@/types/resume'
+import { getClientRect, SHAPE_ANCHORS, ShapeName } from '@/modules/resume'
+import { useTemplateRef } from 'vue'
+import { Circle, Square, Trash, Type, ZoomIn, ZoomOut } from 'lucide-vue-next'
+
+// TODO: Refactor
+const CONTAINER_HEIGHT = 816
+
+const TOP_BAR_HEIGHT = 30
+
+const PAGE = 'page'
+const PAGE_WIDTH = 678 * 0.75
+const PAGE_HEIGHT = 960 * 0.75
+const PAGE_BACKGROUND_COLOR = 'white'
+const PAGE_STROKE_WIDTH = 1
+const PAGE_STROKE_COLOR = '#E2E8F0'
+
+const SELECTION_RECTANGLE_FILL = 'rgba(96,165,250,0.5)'
+const SELECTION_RECTANGLE_STROKE = 'rgb(96,165,250)'
+const SELECTION_RECTANGLE_STROKE_WIDTH = 1
+
+const SHAPE_FILL = '#CBD5E1'
+
+const RECT_WIDTH = 100
+const RECT_HEIGHT = RECT_WIDTH
+
+const CIRCLE_RADIUS = 50
+
+const TEXT_WIDTH = 175
+const TEXT_FONT_SIZE = 14
+const TEXT_PLACEHOLDER = 'Lorem ipsum dolor sit amet'
+const DEFAULT_TEXT_FILL = '#000000'
+
+// TODO:
+// - text alignment
+// - text font size
+// - text font family
+// - layering
+// - nice UI
+// - more shapes
+// - clipping
+// - persistence
+// - images
+// - refactor
+// - keyboard shortcuts
+// - context menu
+// - dragging rect restyle
+// - RWD - take collapsable sidebar into account
+const containerRef = useTemplateRef('containerRef')
+const pageRef = useTemplateRef('pageRef')
+
+const stageConfig = ref({ width: 0, height: 0 })
+
+const allShapes = ref<Shape[]>([]) // TODO: Rename
+const selectedIds = ref<string[]>([])
+
+const rectRefs = ref<any[]>([])
+const circleRefs = ref<any[]>([])
+const textRefs = ref<any[]>([])
+
+const stageRef = ref<any>(null)
+const layerRef = ref<any>(null)
+const transformerRef = ref<any>(null)
+
+const isSelecting = ref(false)
+const selectionRectangle = reactive({
+  visible: false,
+  x1: 0,
+  y1: 0,
+  x2: 0,
+  y2: 0,
+})
+
+const selectedRect = computed(() => {
+  if (selectedIds.value.length === 1) {
+    const shape = allShapes.value.find(({ id }) => id === selectedIds.value[0])
+    if (shape && shape.id.includes(ShapeName.Rect)) return shape
+  }
+})
+const selectedCircle = computed(() => {
+  if (selectedIds.value.length === 1) {
+    const shape = allShapes.value.find(({ id }) => id === selectedIds.value[0])
+    if (shape && shape.id.includes(ShapeName.Circle)) return shape
+  }
+})
+const selectedText = computed(() => {
+  if (selectedIds.value.length === 1) {
+    const shape = allShapes.value.find(({ id }) => id === selectedIds.value[0])
+    if (shape && shape.id.includes(ShapeName.Text)) return shape
+  }
+})
+
+onMounted(() => {
+  if (!containerRef.value || !pageRef.value || !stageRef.value) return
+  // TODO: Remove
+  //const container = stageRef.value.getNode().container()
+  //container.style.backgroundColor = 'white'
+  stageConfig.value.width = containerRef.value?.getBoundingClientRect().width || 0
+  stageConfig.value.height = containerRef.value?.getBoundingClientRect().height || 0
+  const page = pageRef.value.getNode()
+  page.attrs.width = PAGE_WIDTH
+  page.attrs.height = PAGE_HEIGHT
+  page.x(stageConfig.value.width / 2 - PAGE_WIDTH / 2)
+  page.y(stageConfig.value.height / 2 - PAGE_HEIGHT / 2)
+  page.attrs.fill = PAGE_BACKGROUND_COLOR
+  page.strokeWidth(PAGE_STROKE_WIDTH)
+  page.stroke(PAGE_STROKE_COLOR)
+})
+
+watch(selectedIds, () => {
+  if (!transformerRef.value) return
+  const nodes = selectedIds.value
+    .map((selectedId) => {
+      const shape = allShapes.value.find(({ id }) => id === selectedId)
+      if (!shape) return null
+      if (shape.id.includes(ShapeName.Rect))
+        return rectRefs.value
+          .find((rectRef) => rectRef.getNode().attrs.id === selectedId)
+          ?.getNode()
+      if (shape.id.includes(ShapeName.Text))
+        return textRefs.value
+          .find((textRef) => textRef.getNode().attrs.id === selectedId)
+          ?.getNode()
+      if (shape.id.includes(ShapeName.Circle))
+        return circleRefs.value
+          .find((circleRef) => circleRef.getNode().attrs.id === selectedId)
+          ?.getNode()
+      return null
+    })
+    .filter(Boolean)
+  const transformer = transformerRef.value.getNode()
+  transformer.nodes(nodes)
+  if (nodes.length === 1) transformer.enabledAnchors(SHAPE_ANCHORS[nodes[0].name() as ShapeName])
+  if (nodes.length > 1)
+    transformer.enabledAnchors(
+      intersection(...nodes.map((node) => SHAPE_ANCHORS[node.name() as ShapeName])),
+    )
+})
+
+const handleStageClick = (event: KonvaEventObject<MouseEvent>) => {
+  if (selectionRectangle.visible) return
+  if (event.target === event.target.getStage() || event.target.attrs.id === PAGE)
+    return (selectedIds.value = [])
+  if (
+    !event.target.hasName(ShapeName.Rect) &&
+    !event.target.hasName(ShapeName.Text) &&
+    !event.target.hasName(ShapeName.Circle)
+  )
+    return
+  const clickedId = event.target.attrs.id
+  const isSelected = selectedIds.value.includes(clickedId)
+  const isMetaPressed = event.evt.shiftKey || event.evt.ctrlKey || event.evt.metaKey
+  if (!isSelected && !isMetaPressed) selectedIds.value = [clickedId]
+  if (isSelected && isMetaPressed)
+    selectedIds.value = selectedIds.value.filter((selectedId) => selectedId !== clickedId)
+  if (!isSelected && isMetaPressed) selectedIds.value = [...selectedIds.value, clickedId]
+}
+
+const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
+  if (event.target !== event.target.getStage() && event.target.attrs.id !== PAGE) return
+  isSelecting.value = true
+  const stage = event.target.getStage()
+  if (!stage) return
+  const position = stage.getPointerPosition()
+  if (!position) return
+  selectionRectangle.visible = true
+  selectionRectangle.x1 = position.x
+  selectionRectangle.y1 = position.y
+  selectionRectangle.x2 = position.x
+  selectionRectangle.y2 = position.y
+}
+
+const handleMouseMove = (event: KonvaEventObject<MouseEvent>) => {
+  if (!isSelecting.value) return
+  const stage = event.target.getStage()
+  if (!stage) return
+  const position = stage.getPointerPosition()
+  if (!position) return
+  selectionRectangle.x2 = position.x
+  selectionRectangle.y2 = position.y
+}
+
+const handleMouseUp = () => {
+  if (!isSelecting.value) return
+  isSelecting.value = false
+  setTimeout(() => (selectionRectangle.visible = false))
+  const selectionBox = {
+    x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
+    y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
+    width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
+    height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
+  }
+  const selectedShape = allShapes.value.filter((shape) =>
+    Konva.Util.haveIntersection(selectionBox, getClientRect(shape)),
+  )
+  selectedIds.value = selectedShape.map(({ id }) => id)
+}
+
+const handleDragStart = (event: KonvaEventObject<DragEvent>) => {
+  const clickedId = event.target.attrs.id
+  if (!selectedIds.value.includes(clickedId)) selectedIds.value = [clickedId]
+}
+
+const handleDragEnd = (event: KonvaEventObject<DragEvent>) => {
+  const shapes = [...allShapes.value]
+  const index = shapes.findIndex(({ id }) => id === event.target.attrs.id)
+  if (index === -1) return
+  shapes[index] = {
+    ...shapes[index],
+    x: event.target.x(),
+    y: event.target.y(),
+  }
+  allShapes.value = shapes
+}
+
+const handleTransform = (event: KonvaEventObject<Event>) => {
+  const shape = allShapes.value.find(({ id }) => id === event.target.attrs.id)
+  if (!shape) return
+  const node = textRefs.value.find((textRef) => textRef.getNode().attrs.id === shape?.id)?.getNode()
+  shape.width = node.width() * node.scaleX()
+  node.setAttrs({
+    width: node.width() * node.scaleX(),
+    scaleX: 1,
+  })
+}
+
+const handleTransformEnd = (event: KonvaEventObject<Event>) => {
+  const shapes = [...allShapes.value]
+  const isRect = event.target.hasName(ShapeName.Rect)
+  const index = shapes.findIndex(({ id }) => id === event.target.attrs.id)
+  if (index === -1) return
+  const node = event.target
+  const scaleX = node.scaleX()
+  const scaleY = node.scaleY()
+  node.scaleX(1)
+  node.scaleY(1)
+  shapes[index] = {
+    ...shapes[index],
+    x: node.x(),
+    y: node.y(),
+    width: Math.max(5, node.width() * scaleX),
+    ...(isRect ? { height: Math.max(node.height() * scaleY) } : {}),
+    rotation: node.rotation(),
+  }
+  allShapes.value = shapes
+}
+
+const handleRectAdd = async () => {
+  const id = uniqueId(ShapeName.Rect)
+  allShapes.value.push({
+    id,
+    name: ShapeName.Rect,
+    x: stageConfig.value.width / 2 - (RECT_WIDTH / 2),
+    y: stageConfig.value.height / 2 - (RECT_HEIGHT / 2),
+    width: RECT_WIDTH,
+    height: RECT_HEIGHT,
+    fill: SHAPE_FILL,
+    draggable: true,
+  })
+  await nextTick(() => (selectedIds.value = [id]))
+}
+
+const handleCircleAdd = async () => {
+  const id = uniqueId(ShapeName.Circle)
+  allShapes.value.push({
+    id,
+    name: ShapeName.Circle,
+    x: stageConfig.value.width / 2,
+    y: stageConfig.value.height / 2,
+    radius: CIRCLE_RADIUS,
+    fill: SHAPE_FILL,
+    draggable: true,
+  })
+  await nextTick(() => (selectedIds.value = [id]))
+}
+
+const handleTextAdd = async () => {
+  const id = uniqueId(ShapeName.Text)
+  allShapes.value.push({
+    id,
+    name: ShapeName.Text,
+    x: stageConfig.value.width / 2 - (TEXT_WIDTH / 2),
+    y: stageConfig.value.height / 2 - (TEXT_FONT_SIZE / 2),
+    width: TEXT_WIDTH,
+    fontSize: TEXT_FONT_SIZE,
+    text: TEXT_PLACEHOLDER,
+    draggable: true,
+  })
+  await nextTick(() => (selectedIds.value = [id]))
+}
+
+const handleTextUpdate = (value: string) => {
+  const shape = allShapes.value.find(({ id }) => id === selectedText.value?.id)
+  if (!shape) return
+  shape.text = value
+}
+
+const handleTextBlur = (event: FocusEvent) => {
+  if (event.target.value) return
+  allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
+}
+
+const handleColorUpdate = (value: string | number) => {
+  if (typeof value !== 'string') return
+  if (selectedRect.value) selectedRect.value.fill = value
+  if (selectedCircle.value) selectedCircle.value.fill = value
+  if (selectedText.value) selectedText.value.fill = value
+}
+
+const handleSelectedDelete = () => {
+  allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
+  selectedIds.value = []
+}
+</script>
+
+<template>
+  <div class="mb-2 flex hidden gap-x-2">
+    <Textarea class="w-[300px] bg-white" :disabled="!selectedText" :value="selectedText?.text"
+      @update:model-value="handleTextUpdate" @blur="handleTextBlur" />
+    <Input class="size-[36px] shrink-0 border-0 p-0 ring-0" type="color" :disabled="selectedIds.length !== 1"
+      default-value="#ffaabb" @update:model-value="handleColorUpdate" />
+  </div>
+
+  <div :style="{ height: `${CONTAINER_HEIGHT}px` }"
+    class="relative flex overflow-hidden rounded-sm border border-slate-200 bg-slate-50">
+    <div ref="containerRef" class="size-full">
+      <div :style="{
+        height: `${TOP_BAR_HEIGHT}px`,
+        top: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOP_BAR_HEIGHT) / 2}px`,
+        left: `${stageConfig.width / 2 - TOP_BAR_HEIGHT * 2}px`,
+      }" class="flex absolute z-50 w-7.5 -translate-x-1/2 transition-none">
+        <Button class="size-full rounded-r-none" size="icon" variant="outline" @click="handleRectAdd">
+          <Square />
+        </Button>
+        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline" @click="handleCircleAdd">
+          <Circle />
+        </Button>
+        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline" @click="handleTextAdd">
+          <Type />
+        </Button>
+        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline"
+          :disabled="selectedIds.length !== 1">
+          <label class="flex items-center justify-center size-full cursor-pointer">
+            <div :style="{
+              backgroundColor: selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || DEFAULT_TEXT_FILL
+            }" class="size-1/2 shrink-0" />
+            <Input class="invisible size-0 p-0 border-0" type="color"
+              :value="selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || DEFAULT_TEXT_FILL"
+              @update:model-value="handleColorUpdate" />
+          </label>
+        </Button>
+        <Button class="size-full rounded-l-none border-l-0 text-destructive" size="icon" variant="outline"
+          :disabled="selectedIds.length === 0" @click="handleSelectedDelete">
+          <Trash />
+        </Button>
+      </div>
+
+      <v-stage ref="stageRef" :config="stageConfig" @click="handleStageClick" @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove" @mouseup="handleMouseUp">
+        <v-layer ref="layerRef">
+          <v-rect :id="PAGE" ref="pageRef" />
+          <v-rect ref="rectRefs" v-for="rect in allShapes.filter(({ id }) => id.includes(ShapeName.Rect))"
+            :key="rect.id" :config="rect" @dragstart="handleDragStart" @dragend="handleDragEnd"
+            @transformend="handleTransformEnd" />
+          <v-circle ref="circleRefs" v-for="circle in allShapes.filter(({ id }) => id.includes(ShapeName.Circle))"
+            :key="circle.id" :config="circle" @dragstart="handleDragStart" @dragend="handleDragEnd"
+            @transformend="handleTransformEnd" />
+          <v-text ref="textRefs" v-for="text in allShapes.filter(({ id }) => id.includes(ShapeName.Text))"
+            :key="text.id" :config="text" @dragstart="handleDragStart" @dragend="handleDragEnd"
+            @transform="handleTransform" @transformend="handleTransformEnd" />
+          <v-transformer ref="transformerRef" :config="{
+            shouldOverdrawWholeArea: true,
+            boundBoxFunc: (oldBox: Box, newBox: Box) =>
+              newBox.width < 5 || newBox.height < 5 ? oldBox : newBox,
+          }" />
+          <v-rect v-if="selectionRectangle.visible" :config="{
+            x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
+            y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
+            width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
+            height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
+            fill: SELECTION_RECTANGLE_FILL,
+            stroke: SELECTION_RECTANGLE_STROKE,
+            strokeWidth: SELECTION_RECTANGLE_STROKE_WIDTH,
+          }" />
+        </v-layer>
+      </v-stage>
+
+      <div :style="{
+        height: `${TOP_BAR_HEIGHT}px`,
+        bottom: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOP_BAR_HEIGHT) / 2}px`,
+        left: `${stageConfig.width / 2 - TOP_BAR_HEIGHT * 1.5}px`,
+      }" class="flex absolute z-50 w-7.5 -translate-x-1/2 transition-none">
+        <Button class="size-full rounded-r-none" size="icon" variant="outline">
+          <ZoomOut />
+        </Button>
+        <Button tabindex="-1" class="text-xs pointer-events-none size-full rounded-none border-l-0
+          w-[60px]" size="icon" variant="outline">
+          <label class="flex items-center justify-center size-full cursor-pointer">
+            <div class="size-1/2 shrink-0">100%</div>
+            <Input hidden type="number" :value="100" />
+          </label>
+        </Button>
+        <Button class="size-full rounded-l-none border-l-0" size="icon" variant="outline">
+          <ZoomIn />
+        </Button>
+      </div>
+    </div>
+    <div class="w-[300px] border-l-1 border-l-slate-200 bg-white" />
+  </div>
+</template>

@@ -23,10 +23,11 @@ import {
   TextCursor,
 } from 'lucide-vue-next'
 import { Button } from '../ui/button'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute, useRouter, type RouteRecordNameGeneric } from 'vue-router'
 import { cn } from '@/lib/utils'
 import { useLocalStorage } from '@vueuse/core'
 import { useQueryClient } from '@tanstack/vue-query'
+import { computed } from 'vue'
 
 const token = useLocalStorage<string | null>('token', null)
 
@@ -44,6 +45,30 @@ const handleSignOut = () => {
   queryClient.clear()
   router.push(ROUTES.SIGN_IN.path)
 }
+
+const isDashboardRouteActive = computed(() =>
+  ([ROUTES.DASHBOARD.name] as RouteRecordNameGeneric[]).includes(route.name),
+)
+const isResumesRouteActive = computed(() =>
+  ([ROUTES.RESUMES.name, ROUTES.RESUME_EDITOR.name] as RouteRecordNameGeneric[]).includes(
+    route.name,
+  ),
+)
+const isInterviewsRouteActive = computed(() =>
+  ([ROUTES.INTERVIEWS.name] as RouteRecordNameGeneric[]).includes(route.name),
+)
+const isApplicationsRouteActive = computed(() =>
+  (
+    [
+      ROUTES.APPLICATIONS.name,
+      ROUTES.CREATE_APPLICATION.name,
+      ROUTES.UPDATE_APPLICATION.name,
+    ] as RouteRecordNameGeneric[]
+  ).includes(route.name),
+)
+const isSettingsRouteActive = computed(() =>
+  ([ROUTES.SETTINGS.name] as RouteRecordNameGeneric[]).includes(route.name),
+)
 </script>
 
 <template>
@@ -73,9 +98,9 @@ const handleSignOut = () => {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton :isActive="route.path === ROUTES.DASHBOARD.path" asChild>
+              <SidebarMenuButton :isActive="isDashboardRouteActive" asChild>
                 <RouterLink
-                  :class="cn(route.path !== ROUTES.DASHBOARD.path && '!text-slate-500')"
+                  :class="cn(!isDashboardRouteActive && '!text-slate-500')"
                   :to="ROUTES.DASHBOARD.path"
                 >
                   <Home class="!size-5" />
@@ -94,9 +119,9 @@ const handleSignOut = () => {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton :isActive="route.path === ROUTES.RESUMES.path" asChild>
+              <SidebarMenuButton :isActive="isResumesRouteActive" asChild>
                 <RouterLink
-                  :class="cn(route.path !== ROUTES.RESUMES.path && '!text-slate-500')"
+                  :class="cn(!isResumesRouteActive && '!text-slate-500')"
                   :to="ROUTES.RESUMES.path"
                 >
                   <TextCursor class="!size-5" />
@@ -106,9 +131,9 @@ const handleSignOut = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton :isActive="route.path === ROUTES.INTERVIEWS.path" asChild>
+              <SidebarMenuButton :isActive="isInterviewsRouteActive" asChild>
                 <RouterLink
-                  :class="cn(route.path !== ROUTES.INTERVIEWS.path && '!text-slate-500')"
+                  :class="cn(!isInterviewsRouteActive && '!text-slate-500')"
                   :to="ROUTES.INTERVIEWS.path"
                 >
                   <Calendar class="!size-5" />
@@ -118,9 +143,9 @@ const handleSignOut = () => {
             </SidebarMenuItem>
 
             <SidebarMenuItem>
-              <SidebarMenuButton :isActive="route.path === ROUTES.APPLICATIONS.path" asChild>
+              <SidebarMenuButton :isActive="isApplicationsRouteActive" asChild>
                 <RouterLink
-                  :class="cn(route.path !== ROUTES.APPLICATIONS.path && '!text-slate-500')"
+                  :class="cn(!isApplicationsRouteActive && '!text-slate-500')"
                   :to="ROUTES.APPLICATIONS.path"
                 >
                   <Briefcase class="!size-5" />
@@ -139,9 +164,9 @@ const handleSignOut = () => {
         <SidebarGroupContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton :isActive="route.path === ROUTES.SETTINGS.path" asChild>
+              <SidebarMenuButton :isActive="isSettingsRouteActive" asChild>
                 <RouterLink
-                  :class="cn(route.path !== ROUTES.SETTINGS.path && '!text-slate-500')"
+                  :class="cn(!isSettingsRouteActive && '!text-slate-500')"
                   :to="ROUTES.SETTINGS.path"
                 >
                   <Settings2 class="!size-5" />

@@ -6,6 +6,7 @@ import {
 } from '@tanstack/vue-query'
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
+import VueKonva from 'vue-konva'
 import { toast } from 'vue-sonner'
 import App from './App.vue'
 import './index.css'
@@ -42,5 +43,7 @@ const vueQueryPluginOptions: VueQueryPluginOptions = {
 }
 
 app.use(VueQueryPlugin, vueQueryPluginOptions)
+
+app.use(VueKonva)
 
 router.isReady().then(() => app.mount('#app'))

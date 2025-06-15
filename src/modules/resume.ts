@@ -1,0 +1,67 @@
+import type { Shape } from '@/types/resume'
+
+export enum ShapeName {
+  Rect = 'rect',
+  Circle = 'circle',
+  Text = 'text',
+}
+
+enum Anchor {
+  TopLeft = 'top-left',
+  TopRight = 'top-right',
+  BottomLeft = 'bottom-left',
+  BottomRight = 'bottom-right',
+  MiddleLeft = 'middle-left',
+  MiddleRight = 'middle-right',
+  TopCenter = 'top-center',
+  BottomCenter = 'bottom-center',
+}
+
+export const SHAPE_ANCHORS = {
+  [ShapeName.Rect]: [
+    Anchor.TopLeft,
+    Anchor.TopRight,
+    Anchor.BottomLeft,
+    Anchor.BottomRight,
+    Anchor.MiddleLeft,
+    Anchor.MiddleRight,
+    Anchor.TopCenter,
+    Anchor.BottomCenter,
+  ],
+  [ShapeName.Circle]: [Anchor.TopLeft, Anchor.TopRight, Anchor.BottomLeft, Anchor.BottomRight],
+  [ShapeName.Text]: [Anchor.MiddleLeft, Anchor.MiddleRight],
+}
+
+const degreeToRadian = (angle: number) => (angle / 180) * Math.PI
+
+const calculateCorner = (
+  pivotX: number,
+  pivotY: number,
+  diffX: number,
+  diffY: number,
+  angle: number,
+) => {
+  const distance = Math.sqrt(diffX * diffX + diffY * diffY)
+  angle += Math.atan2(diffY, diffX)
+  const x = pivotX + distance * Math.cos(angle)
+  const y = pivotY + distance * Math.sin(angle)
+  return { x, y }
+}
+
+export const getClientRect = ({ x = 0, y = 0, width = 0, height = 0, rotation = 0 }: Shape) => {
+  const radian = degreeToRadian(rotation)
+  const p1 = calculateCorner(x, y, 0, 0, radian)
+  const p2 = calculateCorner(x, y, width, 0, radian)
+  const p3 = calculateCorner(x, y, width, height, radian)
+  const p4 = calculateCorner(x, y, 0, height, radian)
+  const minX = Math.min(p1.x, p2.x, p3.x, p4.x)
+  const minY = Math.min(p1.y, p2.y, p3.y, p4.y)
+  const maxX = Math.max(p1.x, p2.x, p3.x, p4.x)
+  const maxY = Math.max(p1.y, p2.y, p3.y, p4.y)
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY,
+  }
+}
