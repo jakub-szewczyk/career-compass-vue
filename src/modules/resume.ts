@@ -32,6 +32,34 @@ export const SHAPE_ANCHORS = {
   [ShapeName.Text]: [Anchor.MiddleLeft, Anchor.MiddleRight],
 }
 
+export const CONTAINER_HEIGHT = 816
+
+export const TOOLBAR_HEIGHT = 30
+
+export const PAGE_ID = 'page'
+export const PAGE_WIDTH = 508.5
+export const PAGE_HEIGHT = 720
+export const PAGE_FILL = 'white'
+export const PAGE_STROKE_WIDTH = 1
+export const PAGE_STROKE_COLOR = '#E2E8F0'
+
+export const SELECTION_RECTANGLE_FILL = 'rgba(96,165,250,0.5)'
+export const SELECTION_RECTANGLE_STROKE = 'rgb(96,165,250)'
+export const SELECTION_RECTANGLE_STROKE_WIDTH = 1
+
+export const SHAPE_FILL = '#CBD5E1'
+
+export const RECT_WIDTH = 100
+export const RECT_HEIGHT = RECT_WIDTH
+
+export const CIRCLE_RADIUS = 50
+
+export const TEXT_WIDTH = 175
+export const TEXT_FONT_SIZE = 14
+export const TEXT_ALIGN = 'left'
+export const TEXT_CONTENT = 'Lorem ipsum dolor sit amet'
+export const TEXT_FILL = '#000000'
+
 const degreeToRadian = (angle: number) => (angle / 180) * Math.PI
 
 const calculateCorner = (

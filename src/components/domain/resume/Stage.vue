@@ -10,69 +10,84 @@ import { computed } from 'vue'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import type { Box, Shape } from '@/types/resume'
-import { getClientRect, SHAPE_ANCHORS, ShapeName } from '@/modules/resume'
+import {
+  TEXT_ALIGN,
+  CIRCLE_RADIUS,
+  CONTAINER_HEIGHT,
+  getClientRect,
+  PAGE_FILL,
+  PAGE_HEIGHT,
+  PAGE_ID,
+  PAGE_STROKE_COLOR,
+  PAGE_STROKE_WIDTH,
+  PAGE_WIDTH,
+  RECT_HEIGHT,
+  RECT_WIDTH,
+  SELECTION_RECTANGLE_FILL,
+  SELECTION_RECTANGLE_STROKE,
+  SELECTION_RECTANGLE_STROKE_WIDTH,
+  SHAPE_ANCHORS,
+  SHAPE_FILL,
+  ShapeName,
+  TEXT_CONTENT,
+  TEXT_FILL,
+  TEXT_FONT_SIZE,
+  TEXT_WIDTH,
+  TOOLBAR_HEIGHT,
+} from '@/modules/resume'
 import { useTemplateRef } from 'vue'
-import { Circle, Square, Trash, Type, ZoomIn, ZoomOut } from 'lucide-vue-next'
-
-// TODO: Refactor
-const CONTAINER_HEIGHT = 816
-
-const TOP_BAR_HEIGHT = 30
-
-const PAGE = 'page'
-const PAGE_WIDTH = 678 * 0.75
-const PAGE_HEIGHT = 960 * 0.75
-const PAGE_BACKGROUND_COLOR = 'white'
-const PAGE_STROKE_WIDTH = 1
-const PAGE_STROKE_COLOR = '#E2E8F0'
-
-const SELECTION_RECTANGLE_FILL = 'rgba(96,165,250,0.5)'
-const SELECTION_RECTANGLE_STROKE = 'rgb(96,165,250)'
-const SELECTION_RECTANGLE_STROKE_WIDTH = 1
-
-const SHAPE_FILL = '#CBD5E1'
-
-const RECT_WIDTH = 100
-const RECT_HEIGHT = RECT_WIDTH
-
-const CIRCLE_RADIUS = 50
-
-const TEXT_WIDTH = 175
-const TEXT_FONT_SIZE = 14
-const TEXT_PLACEHOLDER = 'Lorem ipsum dolor sit amet'
-const DEFAULT_TEXT_FILL = '#000000'
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Circle,
+  Italic,
+  Square,
+  Strikethrough,
+  Trash,
+  Type,
+  Underline,
+  ZoomIn,
+  ZoomOut,
+} from 'lucide-vue-next'
+import { Separator } from '@/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import type { AcceptableValue } from 'reka-ui'
 
 // TODO:
 // - text alignment
 // - text font size
 // - text font family
 // - layering
-// - nice UI
-// - more shapes
 // - clipping
 // - persistence
-// - images
-// - refactor
-// - keyboard shortcuts
+// - more shapes
+// - RWD (take collapsable sidebar into account)
 // - context menu
-// - dragging rect restyle
-// - RWD - take collapsable sidebar into account
+// - keyboard shortcuts
+// - images
 const containerRef = useTemplateRef('containerRef')
 const pageRef = useTemplateRef('pageRef')
+const stageRef = useTemplateRef('stageRef')
+const rectRefs = useTemplateRef('rectRefs')
+const circleRefs = useTemplateRef('circleRefs')
+const textRefs = useTemplateRef('textRefs')
+const transformerRef = useTemplateRef('transformerRef')
 
 const stageConfig = ref({ width: 0, height: 0 })
-
-const allShapes = ref<Shape[]>([]) // TODO: Rename
+const allShapes = ref<Shape[]>([])
 const selectedIds = ref<string[]>([])
-
-const rectRefs = ref<any[]>([])
-const circleRefs = ref<any[]>([])
-const textRefs = ref<any[]>([])
-
-const stageRef = ref<any>(null)
-const layerRef = ref<any>(null)
-const transformerRef = ref<any>(null)
-
 const isSelecting = ref(false)
 const selectionRectangle = reactive({
   visible: false,
@@ -103,9 +118,6 @@ const selectedText = computed(() => {
 
 onMounted(() => {
   if (!containerRef.value || !pageRef.value || !stageRef.value) return
-  // TODO: Remove
-  //const container = stageRef.value.getNode().container()
-  //container.style.backgroundColor = 'white'
   stageConfig.value.width = containerRef.value?.getBoundingClientRect().width || 0
   stageConfig.value.height = containerRef.value?.getBoundingClientRect().height || 0
   const page = pageRef.value.getNode()
@@ -113,7 +125,7 @@ onMounted(() => {
   page.attrs.height = PAGE_HEIGHT
   page.x(stageConfig.value.width / 2 - PAGE_WIDTH / 2)
   page.y(stageConfig.value.height / 2 - PAGE_HEIGHT / 2)
-  page.attrs.fill = PAGE_BACKGROUND_COLOR
+  page.attrs.fill = PAGE_FILL
   page.strokeWidth(PAGE_STROKE_WIDTH)
   page.stroke(PAGE_STROKE_COLOR)
 })
@@ -150,7 +162,7 @@ watch(selectedIds, () => {
 
 const handleStageClick = (event: KonvaEventObject<MouseEvent>) => {
   if (selectionRectangle.visible) return
-  if (event.target === event.target.getStage() || event.target.attrs.id === PAGE)
+  if (event.target === event.target.getStage() || event.target.attrs.id === PAGE_ID)
     return (selectedIds.value = [])
   if (
     !event.target.hasName(ShapeName.Rect) &&
@@ -168,7 +180,7 @@ const handleStageClick = (event: KonvaEventObject<MouseEvent>) => {
 }
 
 const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
-  if (event.target !== event.target.getStage() && event.target.attrs.id !== PAGE) return
+  if (event.target !== event.target.getStage() && event.target.attrs.id !== PAGE_ID) return
   isSelecting.value = true
   const stage = event.target.getStage()
   if (!stage) return
@@ -261,8 +273,8 @@ const handleRectAdd = async () => {
   allShapes.value.push({
     id,
     name: ShapeName.Rect,
-    x: stageConfig.value.width / 2 - (RECT_WIDTH / 2),
-    y: stageConfig.value.height / 2 - (RECT_HEIGHT / 2),
+    x: stageConfig.value.width / 2 - RECT_WIDTH / 2,
+    y: stageConfig.value.height / 2 - RECT_HEIGHT / 2,
     width: RECT_WIDTH,
     height: RECT_HEIGHT,
     fill: SHAPE_FILL,
@@ -290,11 +302,12 @@ const handleTextAdd = async () => {
   allShapes.value.push({
     id,
     name: ShapeName.Text,
-    x: stageConfig.value.width / 2 - (TEXT_WIDTH / 2),
-    y: stageConfig.value.height / 2 - (TEXT_FONT_SIZE / 2),
+    x: stageConfig.value.width / 2 - TEXT_WIDTH / 2,
+    y: stageConfig.value.height / 2 - TEXT_FONT_SIZE / 2,
     width: TEXT_WIDTH,
     fontSize: TEXT_FONT_SIZE,
-    text: TEXT_PLACEHOLDER,
+    align: TEXT_ALIGN,
+    text: TEXT_CONTENT,
     draggable: true,
   })
   await nextTick(() => (selectedIds.value = [id]))
@@ -311,6 +324,21 @@ const handleTextBlur = (event: FocusEvent) => {
   allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
 }
 
+const handleTextAlign = (payload: AcceptableValue | AcceptableValue[]) => {
+  if (selectedText.value) selectedText.value.align = payload
+}
+
+const handleTextTransform = (payload: AcceptableValue | AcceptableValue[]) => {
+  if (!selectedText.value) return
+  if (Array.isArray(payload)) {
+    selectedText.value.fontStyle = undefined
+    if (payload.includes('bold') && payload.includes('italic'))
+      return (selectedText.value.fontStyle = 'italic bold')
+    return payload.forEach((value) => (selectedText.value.fontStyle = value))
+  }
+  selectedText.value.textDecoration = payload
+}
+
 const handleColorUpdate = (value: string | number) => {
   if (typeof value !== 'string') return
   if (selectedRect.value) selectedRect.value.fill = value
@@ -325,97 +353,269 @@ const handleSelectedDelete = () => {
 </script>
 
 <template>
-  <div class="mb-2 flex hidden gap-x-2">
-    <Textarea class="w-[300px] bg-white" :disabled="!selectedText" :value="selectedText?.text"
-      @update:model-value="handleTextUpdate" @blur="handleTextBlur" />
-    <Input class="size-[36px] shrink-0 border-0 p-0 ring-0" type="color" :disabled="selectedIds.length !== 1"
-      default-value="#ffaabb" @update:model-value="handleColorUpdate" />
-  </div>
-
-  <div :style="{ height: `${CONTAINER_HEIGHT}px` }"
-    class="relative flex overflow-hidden rounded-sm border border-slate-200 bg-slate-50">
+  <div
+    :style="{ height: `${CONTAINER_HEIGHT}px` }"
+    class="relative flex overflow-hidden rounded-sm border border-slate-200 bg-slate-50"
+  >
     <div ref="containerRef" class="size-full">
-      <div :style="{
-        height: `${TOP_BAR_HEIGHT}px`,
-        top: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOP_BAR_HEIGHT) / 2}px`,
-        left: `${stageConfig.width / 2 - TOP_BAR_HEIGHT * 2}px`,
-      }" class="flex absolute z-50 w-7.5 -translate-x-1/2 transition-none">
-        <Button class="size-full rounded-r-none" size="icon" variant="outline" @click="handleRectAdd">
+      <div
+        :style="{
+          height: `${TOOLBAR_HEIGHT}px`,
+          top: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOOLBAR_HEIGHT) / 2}px`,
+          left: `${stageConfig.width / 2 - TOOLBAR_HEIGHT * 2}px`,
+        }"
+        class="absolute z-50 flex w-7.5 -translate-x-1/2 transition-none"
+      >
+        <Button
+          class="size-full rounded-r-none bg-white"
+          size="icon"
+          variant="outline"
+          @click="handleRectAdd"
+        >
           <Square />
         </Button>
-        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline" @click="handleCircleAdd">
+        <Button
+          class="size-full rounded-none border-l-0 bg-white"
+          size="icon"
+          variant="outline"
+          @click="handleCircleAdd"
+        >
           <Circle />
         </Button>
-        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline" @click="handleTextAdd">
+        <Button
+          class="size-full rounded-none border-l-0 bg-white"
+          size="icon"
+          variant="outline"
+          @click="handleTextAdd"
+        >
           <Type />
         </Button>
-        <Button class="size-full rounded-none border-l-0" size="icon" variant="outline"
-          :disabled="selectedIds.length !== 1">
-          <label class="flex items-center justify-center size-full cursor-pointer">
-            <div :style="{
-              backgroundColor: selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || DEFAULT_TEXT_FILL
-            }" class="size-1/2 shrink-0" />
-            <Input class="invisible size-0 p-0 border-0" type="color"
-              :value="selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || DEFAULT_TEXT_FILL"
-              @update:model-value="handleColorUpdate" />
+        <Button
+          class="size-full rounded-none border-l-0 bg-white"
+          size="icon"
+          variant="outline"
+          :disabled="selectedIds.length !== 1"
+        >
+          <label class="flex size-full cursor-pointer items-center justify-center">
+            <div
+              :style="{
+                backgroundColor:
+                  selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || TEXT_FILL,
+              }"
+              class="size-1/2 shrink-0"
+            />
+            <Input
+              class="invisible size-0 border-0 p-0"
+              type="color"
+              :value="selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || TEXT_FILL"
+              @update:model-value="handleColorUpdate"
+            />
           </label>
         </Button>
-        <Button class="size-full rounded-l-none border-l-0 text-destructive" size="icon" variant="outline"
-          :disabled="selectedIds.length === 0" @click="handleSelectedDelete">
+        <Button
+          class="text-destructive size-full rounded-l-none border-l-0 bg-white"
+          size="icon"
+          variant="outline"
+          :disabled="selectedIds.length === 0"
+          @click="handleSelectedDelete"
+        >
           <Trash />
         </Button>
       </div>
 
-      <v-stage ref="stageRef" :config="stageConfig" @click="handleStageClick" @mousedown="handleMouseDown"
-        @mousemove="handleMouseMove" @mouseup="handleMouseUp">
-        <v-layer ref="layerRef">
-          <v-rect :id="PAGE" ref="pageRef" />
-          <v-rect ref="rectRefs" v-for="rect in allShapes.filter(({ id }) => id.includes(ShapeName.Rect))"
-            :key="rect.id" :config="rect" @dragstart="handleDragStart" @dragend="handleDragEnd"
-            @transformend="handleTransformEnd" />
-          <v-circle ref="circleRefs" v-for="circle in allShapes.filter(({ id }) => id.includes(ShapeName.Circle))"
-            :key="circle.id" :config="circle" @dragstart="handleDragStart" @dragend="handleDragEnd"
-            @transformend="handleTransformEnd" />
-          <v-text ref="textRefs" v-for="text in allShapes.filter(({ id }) => id.includes(ShapeName.Text))"
-            :key="text.id" :config="text" @dragstart="handleDragStart" @dragend="handleDragEnd"
-            @transform="handleTransform" @transformend="handleTransformEnd" />
-          <v-transformer ref="transformerRef" :config="{
-            shouldOverdrawWholeArea: true,
-            boundBoxFunc: (oldBox: Box, newBox: Box) =>
-              newBox.width < 5 || newBox.height < 5 ? oldBox : newBox,
-          }" />
-          <v-rect v-if="selectionRectangle.visible" :config="{
-            x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
-            y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
-            width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
-            height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
-            fill: SELECTION_RECTANGLE_FILL,
-            stroke: SELECTION_RECTANGLE_STROKE,
-            strokeWidth: SELECTION_RECTANGLE_STROKE_WIDTH,
-          }" />
+      <v-stage
+        ref="stageRef"
+        :config="stageConfig"
+        @click="handleStageClick"
+        @mousedown="handleMouseDown"
+        @mousemove="handleMouseMove"
+        @mouseup="handleMouseUp"
+      >
+        <v-layer>
+          <v-rect :id="PAGE_ID" ref="pageRef" />
+          <v-rect
+            ref="rectRefs"
+            v-for="rect in allShapes.filter(({ id }) => id.includes(ShapeName.Rect))"
+            :key="rect.id"
+            :config="rect"
+            @dragstart="handleDragStart"
+            @dragend="handleDragEnd"
+            @transformend="handleTransformEnd"
+          />
+          <v-circle
+            ref="circleRefs"
+            v-for="circle in allShapes.filter(({ id }) => id.includes(ShapeName.Circle))"
+            :key="circle.id"
+            :config="circle"
+            @dragstart="handleDragStart"
+            @dragend="handleDragEnd"
+            @transformend="handleTransformEnd"
+          />
+          <v-text
+            ref="textRefs"
+            v-for="text in allShapes.filter(({ id }) => id.includes(ShapeName.Text))"
+            :key="text.id"
+            :config="text"
+            @dragstart="handleDragStart"
+            @dragend="handleDragEnd"
+            @transform="handleTransform"
+            @transformend="handleTransformEnd"
+          />
+          <v-transformer
+            ref="transformerRef"
+            :config="{
+              shouldOverdrawWholeArea: true,
+              boundBoxFunc: (oldBox: Box, newBox: Box) =>
+                newBox.width < 5 || newBox.height < 5 ? oldBox : newBox,
+            }"
+          />
+          <v-rect
+            v-if="selectionRectangle.visible"
+            :config="{
+              x: Math.min(selectionRectangle.x1, selectionRectangle.x2),
+              y: Math.min(selectionRectangle.y1, selectionRectangle.y2),
+              width: Math.abs(selectionRectangle.x2 - selectionRectangle.x1),
+              height: Math.abs(selectionRectangle.y2 - selectionRectangle.y1),
+              fill: SELECTION_RECTANGLE_FILL,
+              stroke: SELECTION_RECTANGLE_STROKE,
+              strokeWidth: SELECTION_RECTANGLE_STROKE_WIDTH,
+            }"
+          />
         </v-layer>
       </v-stage>
 
-      <div :style="{
-        height: `${TOP_BAR_HEIGHT}px`,
-        bottom: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOP_BAR_HEIGHT) / 2}px`,
-        left: `${stageConfig.width / 2 - TOP_BAR_HEIGHT * 1.5}px`,
-      }" class="flex absolute z-50 w-7.5 -translate-x-1/2 transition-none">
-        <Button class="size-full rounded-r-none" size="icon" variant="outline">
+      <div
+        :style="{
+          height: `${TOOLBAR_HEIGHT}px`,
+          bottom: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOOLBAR_HEIGHT) / 2}px`,
+          left: `${stageConfig.width / 2 - TOOLBAR_HEIGHT * 1.5}px`,
+        }"
+        class="absolute z-50 flex w-7.5 -translate-x-1/2 transition-none"
+      >
+        <Button class="size-full rounded-r-none bg-white" size="icon" variant="outline">
           <ZoomOut />
         </Button>
-        <Button tabindex="-1" class="text-xs pointer-events-none size-full rounded-none border-l-0
-          w-[60px]" size="icon" variant="outline">
-          <label class="flex items-center justify-center size-full cursor-pointer">
+        <Button
+          tabindex="-1"
+          class="pointer-events-none size-full w-[60px] rounded-none border-l-0 bg-white text-xs"
+          size="icon"
+          variant="outline"
+        >
+          <label class="flex size-full cursor-pointer items-center justify-center">
             <div class="size-1/2 shrink-0">100%</div>
             <Input hidden type="number" :value="100" />
           </label>
         </Button>
-        <Button class="size-full rounded-l-none border-l-0" size="icon" variant="outline">
+        <Button class="size-full rounded-l-none border-l-0 bg-white" size="icon" variant="outline">
           <ZoomIn />
         </Button>
       </div>
     </div>
-    <div class="w-[300px] border-l-1 border-l-slate-200 bg-white" />
+    <div class="flex w-[300px] flex-col gap-y-2 border-l-1 border-l-slate-200 bg-white p-4">
+      <h2 class="flex items-center gap-x-2 text-sm"><Type class="size-4" /> Typography</h2>
+      <Separator />
+      <div class="flex">
+        <ToggleGroup
+          type="single"
+          :disabled="!selectedText"
+          :model-value="selectedText?.align"
+          @update:model-value="handleTextAlign"
+        >
+          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="left">
+            <AlignLeft />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            class="size-7.5 rounded-r-none bg-white"
+            variant="outline"
+            value="center"
+          >
+            <AlignCenter />
+          </ToggleGroupItem>
+          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="right">
+            <AlignRight />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      <div class="flex">
+        <ToggleGroup
+          type="multiple"
+          :disabled="!selectedText"
+          :model-value="
+            selectedText?.fontStyle === 'italic bold'
+              ? ['bold', 'italic']
+              : [selectedText?.fontStyle]
+          "
+          @update:model-value="handleTextTransform"
+        >
+          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="bold">
+            <Bold />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            class="size-7.5 !rounded-r-none bg-white"
+            variant="outline"
+            value="italic"
+          >
+            <Italic />
+          </ToggleGroupItem>
+        </ToggleGroup>
+        <ToggleGroup
+          type="single"
+          :disabled="!selectedText"
+          :model-value="selectedText?.textDecoration"
+          @update:model-value="handleTextTransform"
+        >
+          <ToggleGroupItem
+            class="size-7.5 !rounded-l-none rounded-r-none !border-l-0 bg-white"
+            variant="outline"
+            value="underline"
+          >
+            <Underline />
+          </ToggleGroupItem>
+          <ToggleGroupItem
+            class="size-7.5 rounded-r-none bg-white"
+            variant="outline"
+            value="line-through"
+          >
+            <Strikethrough />
+          </ToggleGroupItem>
+        </ToggleGroup>
+      </div>
+      <div class="flex flex-col gap-y-1.5">
+        <SelectLabel for="font-family" class="p-0">Family</SelectLabel>
+        <Select :disabled="!selectedText">
+          <SelectTrigger class="w-full">
+            <SelectValue placeholder="Select font family" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="Times New Roman"> Times New Roman </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex flex-col gap-y-1.5">
+        <SelectLabel class="p-0">Size</SelectLabel>
+        <Select :disabled="!selectedText">
+          <SelectTrigger class="w-full">
+            <SelectValue placeholder="Select font size" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectGroup>
+              <SelectItem value="14"> 14 </SelectItem>
+            </SelectGroup>
+          </SelectContent>
+        </Select>
+      </div>
+      <div class="flex flex-col gap-y-1.5">
+        <Label>Content</Label>
+        <Textarea
+          class="max-h-16 resize-none break-all"
+          :disabled="!selectedText"
+          :value="selectedText?.text"
+          @update:model-value="handleTextUpdate"
+          @blur="handleTextBlur"
+        />
+      </div>
+    </div>
   </div>
 </template>
