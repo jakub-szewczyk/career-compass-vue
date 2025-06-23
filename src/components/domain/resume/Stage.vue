@@ -34,6 +34,9 @@ import {
   TEXT_FONT_SIZE,
   TEXT_WIDTH,
   TOOLBAR_HEIGHT,
+  TEXT_FONT_FAMILY,
+  TEXT_MAX_FONT_SIZE,
+  TEXT_MIN_FONT_SIZE,
 } from '@/modules/resume'
 import { useTemplateRef } from 'vue'
 import {
@@ -64,6 +67,13 @@ import {
 import { Label } from '@/components/ui/label'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import type { AcceptableValue } from 'reka-ui'
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from '@/components/ui/number-field'
 
 // TODO:
 // - text alignment
@@ -116,6 +126,15 @@ const selectedText = computed(() => {
   }
 })
 
+const colorPreview = computed(
+  () =>
+    selectedRect?.value?.fill ||
+    selectedCircle?.value?.fill ||
+    selectedText?.value?.fill ||
+    TEXT_FILL,
+)
+
+// FIXME: Shape ref type
 onMounted(() => {
   if (!containerRef.value || !pageRef.value || !stageRef.value) return
   stageConfig.value.width = containerRef.value?.getBoundingClientRect().width || 0
@@ -130,6 +149,7 @@ onMounted(() => {
   page.stroke(PAGE_STROKE_COLOR)
 })
 
+// FIXME: Shape ref types
 watch(selectedIds, () => {
   if (!transformerRef.value) return
   const nodes = selectedIds.value
@@ -138,7 +158,7 @@ watch(selectedIds, () => {
       if (!shape) return null
       if (shape.id.includes(ShapeName.Rect))
         return rectRefs.value
-          .find((rectRef) => rectRef.getNode().attrs.id === selectedId)
+          ?.find((rectRef) => rectRef.getNode().attrs.id === selectedId)
           ?.getNode()
       if (shape.id.includes(ShapeName.Text))
         return textRefs.value
@@ -236,6 +256,7 @@ const handleDragEnd = (event: KonvaEventObject<DragEvent>) => {
   allShapes.value = shapes
 }
 
+// FIXME: Shapes ref type
 const handleTransform = (event: KonvaEventObject<Event>) => {
   const shape = allShapes.value.find(({ id }) => id === event.target.attrs.id)
   if (!shape) return
@@ -308,35 +329,22 @@ const handleTextAdd = async () => {
     fontSize: TEXT_FONT_SIZE,
     align: TEXT_ALIGN,
     text: TEXT_CONTENT,
+    fontFamily: TEXT_FONT_FAMILY,
     draggable: true,
   })
   await nextTick(() => (selectedIds.value = [id]))
 }
 
-const handleTextUpdate = (value: string) => {
+const handleTextUpdate = (value: string | number) => {
   const shape = allShapes.value.find(({ id }) => id === selectedText.value?.id)
   if (!shape) return
   shape.text = value
 }
 
+// FIXME: Event object type
 const handleTextBlur = (event: FocusEvent) => {
   if (event.target.value) return
   allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
-}
-
-const handleTextAlign = (payload: AcceptableValue | AcceptableValue[]) => {
-  if (selectedText.value) selectedText.value.align = payload
-}
-
-const handleTextTransform = (payload: AcceptableValue | AcceptableValue[]) => {
-  if (!selectedText.value) return
-  if (Array.isArray(payload)) {
-    selectedText.value.fontStyle = undefined
-    if (payload.includes('bold') && payload.includes('italic'))
-      return (selectedText.value.fontStyle = 'italic bold')
-    return payload.forEach((value) => (selectedText.value.fontStyle = value))
-  }
-  selectedText.value.textDecoration = payload
 }
 
 const handleColorUpdate = (value: string | number) => {
@@ -349,6 +357,31 @@ const handleColorUpdate = (value: string | number) => {
 const handleSelectedDelete = () => {
   allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
   selectedIds.value = []
+}
+
+const handleTextAlignChange = (payload: AcceptableValue | AcceptableValue[]) => {
+  if (selectedText.value) selectedText.value.align = payload
+}
+
+const handleFontStyleChange = (payload: AcceptableValue | AcceptableValue[]) => {
+  if (!selectedText.value) return
+  if (Array.isArray(payload)) {
+    selectedText.value.fontStyle = undefined
+    if (payload.includes('bold') && payload.includes('italic'))
+      return (selectedText.value.fontStyle = 'italic bold')
+    return payload.forEach((value) => (selectedText.value!.fontStyle = value))
+  }
+  selectedText.value.textDecoration = payload
+}
+
+const handleFontFamilyChange = (value: AcceptableValue) => {
+  if (!selectedText.value) return
+  selectedText.value.fontFamily = value
+}
+
+const handleFontSizeChange = (value: AcceptableValue) => {
+  if (!selectedText.value) return
+  selectedText.value.fontSize = value
 }
 </script>
 
@@ -364,7 +397,7 @@ const handleSelectedDelete = () => {
           top: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOOLBAR_HEIGHT) / 2}px`,
           left: `${stageConfig.width / 2 - TOOLBAR_HEIGHT * 2}px`,
         }"
-        class="absolute z-50 flex w-7.5 -translate-x-1/2 transition-none"
+        class="absolute z-50 flex w-8 -translate-x-1/2 transition-none"
       >
         <Button
           class="size-full rounded-r-none bg-white"
@@ -397,13 +430,7 @@ const handleSelectedDelete = () => {
           :disabled="selectedIds.length !== 1"
         >
           <label class="flex size-full cursor-pointer items-center justify-center">
-            <div
-              :style="{
-                backgroundColor:
-                  selectedRect?.fill || selectedCircle?.fill || selectedText?.fill || TEXT_FILL,
-              }"
-              class="size-1/2 shrink-0"
-            />
+            <div :style="{ backgroundColor: colorPreview.toString() }" class="size-1/2 shrink-0" />
             <Input
               class="invisible size-0 border-0 p-0"
               type="color"
@@ -490,7 +517,7 @@ const handleSelectedDelete = () => {
           bottom: `${((CONTAINER_HEIGHT - PAGE_HEIGHT) / 2 - TOOLBAR_HEIGHT) / 2}px`,
           left: `${stageConfig.width / 2 - TOOLBAR_HEIGHT * 1.5}px`,
         }"
-        class="absolute z-50 flex w-7.5 -translate-x-1/2 transition-none"
+        class="absolute z-50 flex w-8 -translate-x-1/2 transition-none"
       >
         <Button class="size-full rounded-r-none bg-white" size="icon" variant="outline">
           <ZoomOut />
@@ -519,19 +546,15 @@ const handleSelectedDelete = () => {
           type="single"
           :disabled="!selectedText"
           :model-value="selectedText?.align"
-          @update:model-value="handleTextAlign"
+          @update:model-value="handleTextAlignChange"
         >
-          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="left">
+          <ToggleGroupItem class="size-8 rounded-r-none bg-white" variant="outline" value="left">
             <AlignLeft />
           </ToggleGroupItem>
-          <ToggleGroupItem
-            class="size-7.5 rounded-r-none bg-white"
-            variant="outline"
-            value="center"
-          >
+          <ToggleGroupItem class="size-8 rounded-r-none bg-white" variant="outline" value="center">
             <AlignCenter />
           </ToggleGroupItem>
-          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="right">
+          <ToggleGroupItem class="size-8 rounded-r-none bg-white" variant="outline" value="right">
             <AlignRight />
           </ToggleGroupItem>
         </ToggleGroup>
@@ -545,16 +568,12 @@ const handleSelectedDelete = () => {
               ? ['bold', 'italic']
               : [selectedText?.fontStyle]
           "
-          @update:model-value="handleTextTransform"
+          @update:model-value="handleFontStyleChange"
         >
-          <ToggleGroupItem class="size-7.5 rounded-r-none bg-white" variant="outline" value="bold">
+          <ToggleGroupItem class="size-8 rounded-r-none bg-white" variant="outline" value="bold">
             <Bold />
           </ToggleGroupItem>
-          <ToggleGroupItem
-            class="size-7.5 !rounded-r-none bg-white"
-            variant="outline"
-            value="italic"
-          >
+          <ToggleGroupItem class="size-8 !rounded-r-none bg-white" variant="outline" value="italic">
             <Italic />
           </ToggleGroupItem>
         </ToggleGroup>
@@ -562,17 +581,17 @@ const handleSelectedDelete = () => {
           type="single"
           :disabled="!selectedText"
           :model-value="selectedText?.textDecoration"
-          @update:model-value="handleTextTransform"
+          @update:model-value="handleFontStyleChange"
         >
           <ToggleGroupItem
-            class="size-7.5 !rounded-l-none rounded-r-none !border-l-0 bg-white"
+            class="size-8 !rounded-l-none rounded-r-none !border-l-0 bg-white"
             variant="outline"
             value="underline"
           >
             <Underline />
           </ToggleGroupItem>
           <ToggleGroupItem
-            class="size-7.5 rounded-r-none bg-white"
+            class="size-8 rounded-r-none bg-white"
             variant="outline"
             value="line-through"
           >
@@ -581,27 +600,56 @@ const handleSelectedDelete = () => {
         </ToggleGroup>
       </div>
       <div class="flex flex-col gap-y-1.5">
-        <SelectLabel for="font-family" class="p-0">Family</SelectLabel>
-        <Select :disabled="!selectedText">
-          <SelectTrigger class="w-full">
-            <SelectValue placeholder="Select font family" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectGroup>
-              <SelectItem value="Times New Roman"> Times New Roman </SelectItem>
-            </SelectGroup>
-          </SelectContent>
-        </Select>
+        <NumberField
+          id="fontSize"
+          class="w-fit [&_input]:h-[32px]"
+          :disabled="!selectedText"
+          :min="TEXT_MIN_FONT_SIZE"
+          :max="TEXT_MAX_FONT_SIZE"
+          :model-value="selectedText?.fontSize || TEXT_FONT_SIZE"
+          @update:model-value="handleFontSizeChange"
+        >
+          <Label for="fontSize">Size</Label>
+          <NumberFieldContent>
+            <NumberFieldDecrement class="cursor-pointer" />
+            <NumberFieldInput />
+            <NumberFieldIncrement class="cursor-pointer" />
+          </NumberFieldContent>
+        </NumberField>
       </div>
       <div class="flex flex-col gap-y-1.5">
-        <SelectLabel class="p-0">Size</SelectLabel>
-        <Select :disabled="!selectedText">
-          <SelectTrigger class="w-full">
-            <SelectValue placeholder="Select font size" />
+        <SelectLabel for="font-family" class="p-0">Family</SelectLabel>
+        <Select
+          :disabled="!selectedText"
+          :model-value="selectedText?.fontFamily"
+          @update:model-value="handleFontFamilyChange"
+        >
+          <SelectTrigger class="w-full" size="sm">
+            <SelectValue
+              :style="{ fontFamily: selectedText?.fontFamily }"
+              placeholder="Select font family"
+            />
           </SelectTrigger>
           <SelectContent>
             <SelectGroup>
-              <SelectItem value="14"> 14 </SelectItem>
+              <SelectItem class="font-[Arial]" value="Arial"> Arial </SelectItem>
+              <SelectItem class="font-[Times_New_Roman]" value="Times New Roman">
+                Times New Roman
+              </SelectItem>
+              <SelectItem class="font-[Courier_New]" value="Courier New"> Courier New </SelectItem>
+              <SelectItem class="font-[Verdana]" value="Verdana"> Verdana </SelectItem>
+              <SelectItem class="font-[Georgia]" value="Georgia"> Georgia </SelectItem>
+              <SelectItem class="font-[Palatino]" value="Palatino"> Palatino </SelectItem>
+              <SelectItem class="font-[Garamond]" value="Garamond"> Garamond </SelectItem>
+              <SelectItem class="font-[Comic_Sans_MS]" value="Comic Sans MS">
+                Comic Sans MS
+              </SelectItem>
+              <SelectItem class="font-[Trebuchet_MS]" value="Trebuchet MS">
+                Trebuchet MS
+              </SelectItem>
+              <SelectItem class="font-[Arial_Black]" value="Arial Black"> Arial Black </SelectItem>
+              <SelectItem class="font-[Impact]" value="Impact"> Impact </SelectItem>
+              <SelectItem class="font-[PT_Sans]" value="PT Sans"> PT Sans </SelectItem>
             </SelectGroup>
           </SelectContent>
         </Select>

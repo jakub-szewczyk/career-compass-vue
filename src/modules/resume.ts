@@ -32,9 +32,9 @@ export const SHAPE_ANCHORS = {
   [ShapeName.Text]: [Anchor.MiddleLeft, Anchor.MiddleRight],
 }
 
-export const CONTAINER_HEIGHT = 816
+export const CONTAINER_HEIGHT = 824
 
-export const TOOLBAR_HEIGHT = 30
+export const TOOLBAR_HEIGHT = 32
 
 export const PAGE_ID = 'page'
 export const PAGE_WIDTH = 508.5
@@ -56,8 +56,11 @@ export const CIRCLE_RADIUS = 50
 
 export const TEXT_WIDTH = 175
 export const TEXT_FONT_SIZE = 14
+export const TEXT_MIN_FONT_SIZE = 8
+export const TEXT_MAX_FONT_SIZE = 48
 export const TEXT_ALIGN = 'left'
 export const TEXT_CONTENT = 'Lorem ipsum dolor sit amet'
+export const TEXT_FONT_FAMILY = 'Arial'
 export const TEXT_FILL = '#000000'
 
 const degreeToRadian = (angle: number) => (angle / 180) * Math.PI
