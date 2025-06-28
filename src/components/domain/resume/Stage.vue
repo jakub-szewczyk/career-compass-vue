@@ -306,6 +306,7 @@ const handleRectAdd = async () => {
     height: RECT_HEIGHT,
     fill: SHAPE_FILL,
     draggable: true,
+    visible: true,
   })
   await nextTick(() => (selectedIds.value = [id]))
 }
@@ -320,6 +321,7 @@ const handleCircleAdd = async () => {
     radius: CIRCLE_RADIUS,
     fill: SHAPE_FILL,
     draggable: true,
+    visible: true,
   })
   await nextTick(() => (selectedIds.value = [id]))
 }
@@ -337,6 +339,7 @@ const handleTextAdd = async () => {
     text: TEXT_CONTENT,
     fontFamily: TEXT_FONT_FAMILY,
     draggable: true,
+    visible: true,
   })
   await nextTick(() => (selectedIds.value = [id]))
 }
@@ -405,6 +408,16 @@ const handleLayerClick = (payload: AcceptableValue | AcceptableValue[]) => {
       .map((shape) => shape.id))
   }
   selectedIds.value = [payload.at(-1)]
+}
+
+const handleLayerVisibilityToggle = (event) => {
+  const shape = allShapes.value.find((shape) => shape.id === event.target.value)
+  shape.visible = !shape.visible
+}
+
+const handleLayerDelete = (event) => {
+  allShapes.value = allShapes.value.filter(({ id }) => id !== event.target.value)
+  selectedIds.value = []
 }
 </script>
 
@@ -707,23 +720,23 @@ const handleLayerClick = (payload: AcceptableValue | AcceptableValue[]) => {
             <component :is="shapeNameToIcon(shape.name as ShapeName)" />
             <span>{{ prettifyShapeName(shape.name as ShapeName) }}</span>
           </div>
-          <div class="flex gap-x-2">
-            <ToggleGroup>
-              <ToggleGroupItem
-                class="rounded-md hover:bg-slate-200 hover:text-black [[aria-pressed=true]]:bg-slate-300"
-                size="sm"
-                :value="shape.id"
-                @click.stop="(event) => console.log(event.target.value)"
-              >
-                <Eye />
-              </ToggleGroupItem>
-            </ToggleGroup>
+          <div class="flex gap-x-0.5">
             <Button
               class="h-8 w-7 hover:bg-slate-200"
               size="icon"
               variant="ghost"
               :value="shape.id"
-              @click.stop="(event) => console.log(event.target.value)"
+              @click.stop="handleLayerVisibilityToggle"
+            >
+              <Eye v-if="shape.visible" />
+              <EyeOff v-else />
+            </Button>
+            <Button
+              class="h-8 w-7 hover:bg-slate-200"
+              size="icon"
+              variant="ghost"
+              :value="shape.id"
+              @click.stop="handleLayerDelete"
             >
               <Trash />
             </Button>
