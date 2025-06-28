@@ -1,4 +1,5 @@
 import type { Shape } from '@/types/resume'
+import { Circle, Square, TextCursor } from 'lucide-vue-next'
 
 export enum ShapeName {
   Rect = 'rect',
@@ -94,5 +95,27 @@ export const getClientRect = ({ x = 0, y = 0, width = 0, height = 0, rotation = 
     y: minY,
     width: maxX - minX,
     height: maxY - minY,
+  }
+}
+
+export const shapeNameToIcon = (shapeName: ShapeName) => {
+  switch (shapeName) {
+    case ShapeName.Rect:
+      return Square
+    case ShapeName.Circle:
+      return Circle
+    case ShapeName.Text:
+      return TextCursor
+  }
+}
+
+export const prettifyShapeName = (shapeName: ShapeName) => {
+  switch (shapeName) {
+    case ShapeName.Rect:
+      return 'Rectangle'
+    case ShapeName.Circle:
+      return 'Circle'
+    case ShapeName.Text:
+      return 'Text'
   }
 }

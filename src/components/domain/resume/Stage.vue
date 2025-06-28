@@ -37,6 +37,8 @@ import {
   TEXT_FONT_FAMILY,
   TEXT_MAX_FONT_SIZE,
   TEXT_MIN_FONT_SIZE,
+  prettifyShapeName,
+  shapeNameToIcon,
 } from '@/modules/resume'
 import { useTemplateRef } from 'vue'
 import {
@@ -45,7 +47,10 @@ import {
   AlignRight,
   Bold,
   Circle,
+  Eye,
+  EyeOff,
   Italic,
+  Layers,
   Square,
   Strikethrough,
   Trash,
@@ -74,19 +79,17 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from '@/components/ui/number-field'
+import { useKeyModifier } from '@vueuse/core'
 
 // TODO:
-// - text alignment
-// - text font size
-// - text font family
 // - layering
 // - clipping
 // - persistence
 // - more shapes
-// - RWD (take collapsable sidebar into account)
 // - context menu
 // - keyboard shortcuts
 // - images
+// - RWD (take collapsable sidebar into account)
 const containerRef = useTemplateRef('containerRef')
 const pageRef = useTemplateRef('pageRef')
 const stageRef = useTemplateRef('stageRef')
@@ -134,7 +137,10 @@ const colorPreview = computed(
     TEXT_FILL,
 )
 
-// FIXME: Shape ref type
+const meta = useKeyModifier('Meta')
+const shift = useKeyModifier('Shift')
+
+// FIXME: TS errors
 onMounted(() => {
   if (!containerRef.value || !pageRef.value || !stageRef.value) return
   stageConfig.value.width = containerRef.value?.getBoundingClientRect().width || 0
@@ -149,7 +155,7 @@ onMounted(() => {
   page.stroke(PAGE_STROKE_COLOR)
 })
 
-// FIXME: Shape ref types
+// FIXME: TS errors
 watch(selectedIds, () => {
   if (!transformerRef.value) return
   const nodes = selectedIds.value
@@ -256,7 +262,7 @@ const handleDragEnd = (event: KonvaEventObject<DragEvent>) => {
   allShapes.value = shapes
 }
 
-// FIXME: Shapes ref type
+// FIXME: TS errors
 const handleTransform = (event: KonvaEventObject<Event>) => {
   const shape = allShapes.value.find(({ id }) => id === event.target.attrs.id)
   if (!shape) return
@@ -335,13 +341,7 @@ const handleTextAdd = async () => {
   await nextTick(() => (selectedIds.value = [id]))
 }
 
-const handleTextUpdate = (value: string | number) => {
-  const shape = allShapes.value.find(({ id }) => id === selectedText.value?.id)
-  if (!shape) return
-  shape.text = value
-}
-
-// FIXME: Event object type
+// FIXME: TS errors
 const handleTextBlur = (event: FocusEvent) => {
   if (event.target.value) return
   allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
@@ -374,14 +374,37 @@ const handleFontStyleChange = (payload: AcceptableValue | AcceptableValue[]) => 
   selectedText.value.textDecoration = payload
 }
 
+const handleFontSizeChange = (value: AcceptableValue) => {
+  if (!selectedText.value) return
+  selectedText.value.fontSize = value
+}
+
 const handleFontFamilyChange = (value: AcceptableValue) => {
   if (!selectedText.value) return
   selectedText.value.fontFamily = value
 }
 
-const handleFontSizeChange = (value: AcceptableValue) => {
-  if (!selectedText.value) return
-  selectedText.value.fontSize = value
+const handleTextUpdate = (value: string | number) => {
+  const shape = allShapes.value.find(({ id }) => id === selectedText.value?.id)
+  if (!shape) return
+  shape.text = value
+}
+
+// FIXME: TS errors
+const handleLayerClick = (payload: AcceptableValue | AcceptableValue[]) => {
+  if (meta.value) return (selectedIds.value = payload)
+  if (shift.value && selectedIds.value.length === 1) {
+    const prevIndex = allShapes.value.findIndex((shape) => shape.id === payload.at(-2))
+    const nextIndex = allShapes.value.findIndex((shape) => shape.id === payload.at(-1))
+    if (prevIndex < nextIndex)
+      return (selectedIds.value = allShapes.value
+        .slice(prevIndex, nextIndex + 1)
+        .map((shape) => shape.id))
+    return (selectedIds.value = allShapes.value
+      .slice(nextIndex, prevIndex + 1)
+      .map((shape) => shape.id))
+  }
+  selectedIds.value = [payload.at(-1)]
 }
 </script>
 
@@ -664,6 +687,49 @@ const handleFontSizeChange = (value: AcceptableValue) => {
           @blur="handleTextBlur"
         />
       </div>
+
+      <h2 class="mt-10 flex items-center gap-x-2 text-sm"><Layers class="size-4" /> Layers</h2>
+      <Separator />
+      <ToggleGroup
+        class="flex w-full flex-col gap-y-0.5 overflow-y-auto"
+        type="multiple"
+        :model-value="selectedIds"
+        @update:model-value="handleLayerClick"
+      >
+        <ToggleGroupItem
+          class="h-fit w-full items-center justify-between rounded-md py-1 !text-slate-500 hover:bg-slate-50 [[aria-pressed=true]]:bg-slate-100 [[aria-pressed=true]]:!text-black"
+          size="sm"
+          v-for="shape in allShapes"
+          :key="shape.id"
+          :value="shape.id"
+        >
+          <div class="flex items-center gap-x-2">
+            <component :is="shapeNameToIcon(shape.name as ShapeName)" />
+            <span>{{ prettifyShapeName(shape.name as ShapeName) }}</span>
+          </div>
+          <div class="flex gap-x-2">
+            <ToggleGroup>
+              <ToggleGroupItem
+                class="rounded-md hover:bg-slate-200 hover:text-black [[aria-pressed=true]]:bg-slate-300"
+                size="sm"
+                :value="shape.id"
+                @click.stop="(event) => console.log(event.target.value)"
+              >
+                <Eye />
+              </ToggleGroupItem>
+            </ToggleGroup>
+            <Button
+              class="h-8 w-7 hover:bg-slate-200"
+              size="icon"
+              variant="ghost"
+              :value="shape.id"
+              @click.stop="(event) => console.log(event.target.value)"
+            >
+              <Trash />
+            </Button>
+          </div>
+        </ToggleGroupItem>
+      </ToggleGroup>
     </div>
   </div>
 </template>
