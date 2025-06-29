@@ -64,6 +64,11 @@ export const TEXT_CONTENT = 'Lorem ipsum dolor sit amet'
 export const TEXT_FONT_FAMILY = 'Arial'
 export const TEXT_FILL = '#000000'
 
+export const ZOOM_LEVEL = 100
+export const MIN_ZOOM_LEVEL = 25
+export const MAX_ZOOM_LEVEL = 200
+export const ZOOM_LEVEL_STEP = 25
+
 const degreeToRadian = (angle: number) => (angle / 180) * Math.PI
 
 const calculateCorner = (

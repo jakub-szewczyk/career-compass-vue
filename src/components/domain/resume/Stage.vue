@@ -2,11 +2,9 @@
 import { Button } from '@/components/ui/button'
 import { intersection, uniqueId } from 'lodash'
 import { nextTick } from 'vue'
-import { onMounted } from 'vue'
-import { ref, watch, reactive } from 'vue'
+import { ref, watch, reactive, computed } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
-import { computed } from 'vue'
 import { Textarea } from '@/components/ui/textarea'
 import { Input } from '@/components/ui/input'
 import type { Box, Shape } from '@/types/resume'
@@ -39,6 +37,9 @@ import {
   TEXT_MIN_FONT_SIZE,
   prettifyShapeName,
   shapeNameToIcon,
+  ZOOM_LEVEL,
+  MAX_ZOOM_LEVEL,
+  ZOOM_LEVEL_STEP,
 } from '@/modules/resume'
 import { useTemplateRef } from 'vue'
 import {
@@ -80,25 +81,23 @@ import {
   NumberFieldInput,
 } from '@/components/ui/number-field'
 import { useKeyModifier } from '@vueuse/core'
+import { MIN_ZOOM_LEVEL } from '@/modules/resume'
 
 // TODO:
-// - layering
-// - clipping
 // - persistence
+// - clipping
 // - more shapes
 // - context menu
 // - keyboard shortcuts
 // - images
 // - RWD (take collapsable sidebar into account)
+// - stage drag
 const containerRef = useTemplateRef('containerRef')
-const pageRef = useTemplateRef('pageRef')
-const stageRef = useTemplateRef('stageRef')
 const rectRefs = useTemplateRef('rectRefs')
 const circleRefs = useTemplateRef('circleRefs')
 const textRefs = useTemplateRef('textRefs')
 const transformerRef = useTemplateRef('transformerRef')
 
-const stageConfig = ref({ width: 0, height: 0 })
 const allShapes = ref<Shape[]>([])
 const selectedIds = ref<string[]>([])
 const isSelecting = ref(false)
@@ -109,6 +108,31 @@ const selectionRectangle = reactive({
   x2: 0,
   y2: 0,
 })
+const zoomLevel = ref(ZOOM_LEVEL)
+
+const stageConfig = computed(() => {
+  const scale = zoomLevel.value / 100
+  const containerWidth = containerRef.value?.getBoundingClientRect().width || 0
+  const containerHeight = containerRef.value?.getBoundingClientRect().height || 0
+  return {
+    width: containerWidth,
+    height: containerHeight,
+    x: (containerWidth - PAGE_WIDTH * scale) / 2,
+    y: (containerHeight - PAGE_HEIGHT * scale) / 2,
+    scaleX: scale,
+    scaleY: scale,
+  }
+})
+const pageConfig = computed(() => ({
+  id: PAGE_ID,
+  width: PAGE_WIDTH,
+  height: PAGE_HEIGHT,
+  x: 0,
+  y: 0,
+  fill: PAGE_FILL,
+  strokeWidth: PAGE_STROKE_WIDTH,
+  stroke: PAGE_STROKE_COLOR,
+}))
 
 const selectedRect = computed(() => {
   if (selectedIds.value.length === 1) {
@@ -140,22 +164,6 @@ const colorPreview = computed(
 const meta = useKeyModifier('Meta')
 const shift = useKeyModifier('Shift')
 
-// FIXME: TS errors
-onMounted(() => {
-  if (!containerRef.value || !pageRef.value || !stageRef.value) return
-  stageConfig.value.width = containerRef.value?.getBoundingClientRect().width || 0
-  stageConfig.value.height = containerRef.value?.getBoundingClientRect().height || 0
-  const page = pageRef.value.getNode()
-  page.attrs.width = PAGE_WIDTH
-  page.attrs.height = PAGE_HEIGHT
-  page.x(stageConfig.value.width / 2 - PAGE_WIDTH / 2)
-  page.y(stageConfig.value.height / 2 - PAGE_HEIGHT / 2)
-  page.attrs.fill = PAGE_FILL
-  page.strokeWidth(PAGE_STROKE_WIDTH)
-  page.stroke(PAGE_STROKE_COLOR)
-})
-
-// FIXME: TS errors
 watch(selectedIds, () => {
   if (!transformerRef.value) return
   const nodes = selectedIds.value
@@ -210,7 +218,7 @@ const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
   isSelecting.value = true
   const stage = event.target.getStage()
   if (!stage) return
-  const position = stage.getPointerPosition()
+  const position = stage.getRelativePointerPosition()
   if (!position) return
   selectionRectangle.visible = true
   selectionRectangle.x1 = position.x
@@ -223,7 +231,7 @@ const handleMouseMove = (event: KonvaEventObject<MouseEvent>) => {
   if (!isSelecting.value) return
   const stage = event.target.getStage()
   if (!stage) return
-  const position = stage.getPointerPosition()
+  const position = stage.getRelativePointerPosition()
   if (!position) return
   selectionRectangle.x2 = position.x
   selectionRectangle.y2 = position.y
@@ -262,7 +270,6 @@ const handleDragEnd = (event: KonvaEventObject<DragEvent>) => {
   allShapes.value = shapes
 }
 
-// FIXME: TS errors
 const handleTransform = (event: KonvaEventObject<Event>) => {
   const shape = allShapes.value.find(({ id }) => id === event.target.attrs.id)
   if (!shape) return
@@ -300,8 +307,8 @@ const handleRectAdd = async () => {
   allShapes.value.push({
     id,
     name: ShapeName.Rect,
-    x: stageConfig.value.width / 2 - RECT_WIDTH / 2,
-    y: stageConfig.value.height / 2 - RECT_HEIGHT / 2,
+    x: PAGE_WIDTH / 2 - RECT_WIDTH / 2,
+    y: PAGE_HEIGHT / 2 - RECT_HEIGHT / 2,
     width: RECT_WIDTH,
     height: RECT_HEIGHT,
     fill: SHAPE_FILL,
@@ -316,8 +323,8 @@ const handleCircleAdd = async () => {
   allShapes.value.push({
     id,
     name: ShapeName.Circle,
-    x: stageConfig.value.width / 2,
-    y: stageConfig.value.height / 2,
+    x: PAGE_WIDTH / 2,
+    y: PAGE_HEIGHT / 2,
     radius: CIRCLE_RADIUS,
     fill: SHAPE_FILL,
     draggable: true,
@@ -331,8 +338,8 @@ const handleTextAdd = async () => {
   allShapes.value.push({
     id,
     name: ShapeName.Text,
-    x: stageConfig.value.width / 2 - TEXT_WIDTH / 2,
-    y: stageConfig.value.height / 2 - TEXT_FONT_SIZE / 2,
+    x: PAGE_WIDTH / 2 - TEXT_WIDTH / 2,
+    y: PAGE_HEIGHT / 2 - TEXT_FONT_SIZE / 2,
     width: TEXT_WIDTH,
     fontSize: TEXT_FONT_SIZE,
     align: TEXT_ALIGN,
@@ -344,7 +351,6 @@ const handleTextAdd = async () => {
   await nextTick(() => (selectedIds.value = [id]))
 }
 
-// FIXME: TS errors
 const handleTextBlur = (event: FocusEvent) => {
   if (event.target.value) return
   allShapes.value = allShapes.value.filter(({ id }) => !selectedIds.value.includes(id))
@@ -393,7 +399,6 @@ const handleTextUpdate = (value: string | number) => {
   shape.text = value
 }
 
-// FIXME: TS errors
 const handleLayerClick = (payload: AcceptableValue | AcceptableValue[]) => {
   if (meta.value) return (selectedIds.value = payload)
   if (shift.value && selectedIds.value.length === 1) {
@@ -418,6 +423,16 @@ const handleLayerVisibilityToggle = (event) => {
 const handleLayerDelete = (event) => {
   allShapes.value = allShapes.value.filter(({ id }) => id !== event.target.value)
   selectedIds.value = []
+}
+
+const handleZoomIn = () => {
+  if (zoomLevel.value >= MAX_ZOOM_LEVEL) return
+  zoomLevel.value += ZOOM_LEVEL_STEP
+}
+
+const handleZoomOut = () => {
+  if (zoomLevel.value <= MIN_ZOOM_LEVEL) return
+  zoomLevel.value -= ZOOM_LEVEL_STEP
 }
 </script>
 
@@ -495,7 +510,7 @@ const handleLayerDelete = (event) => {
         @mouseup="handleMouseUp"
       >
         <v-layer>
-          <v-rect :id="PAGE_ID" ref="pageRef" />
+          <v-rect ref="pageRef" :config="pageConfig" />
           <v-rect
             ref="rectRefs"
             v-for="rect in allShapes.filter(({ id }) => id.includes(ShapeName.Rect))"
@@ -555,7 +570,12 @@ const handleLayerDelete = (event) => {
         }"
         class="absolute z-50 flex w-8 -translate-x-1/2 transition-none"
       >
-        <Button class="size-full rounded-r-none bg-white" size="icon" variant="outline">
+        <Button
+          class="size-full rounded-r-none bg-white"
+          size="icon"
+          variant="outline"
+          @click="handleZoomOut"
+        >
           <ZoomOut />
         </Button>
         <Button
@@ -565,11 +585,16 @@ const handleLayerDelete = (event) => {
           variant="outline"
         >
           <label class="flex size-full cursor-pointer items-center justify-center">
-            <div class="size-1/2 shrink-0">100%</div>
-            <Input hidden type="number" :value="100" />
+            <div class="size-1/2 shrink-0">{{ zoomLevel }}%</div>
+            <Input hidden type="number" :value="zoomLevel" />
           </label>
         </Button>
-        <Button class="size-full rounded-l-none border-l-0 bg-white" size="icon" variant="outline">
+        <Button
+          class="size-full rounded-l-none border-l-0 bg-white"
+          size="icon"
+          variant="outline"
+          @click="handleZoomIn"
+        >
           <ZoomIn />
         </Button>
       </div>
