@@ -2,7 +2,7 @@
 import { Button } from '@/components/ui/button'
 import { intersection, uniqueId } from 'lodash'
 import { nextTick } from 'vue'
-import { ref, watch, reactive, computed } from 'vue'
+import { ref, watch, reactive, computed, onMounted, onUnmounted } from 'vue'
 import Konva from 'konva'
 import type { KonvaEventObject } from 'konva/lib/Node'
 import { Textarea } from '@/components/ui/textarea'
@@ -91,7 +91,6 @@ import { MIN_ZOOM_LEVEL } from '@/modules/resume'
 // - keyboard shortcuts
 // - images
 // - RWD (take collapsable sidebar into account)
-// - stage drag
 const containerRef = useTemplateRef('containerRef')
 const rectRefs = useTemplateRef('rectRefs')
 const circleRefs = useTemplateRef('circleRefs')
@@ -109,6 +108,9 @@ const selectionRectangle = reactive({
   y2: 0,
 })
 const zoomLevel = ref(ZOOM_LEVEL)
+const isPanning = ref(false)
+const stageOffset = ref({ x: 0, y: 0 })
+const lastPointerPosition = ref<{ x: number; y: number } | null>(null)
 
 const stageConfig = computed(() => {
   const scale = zoomLevel.value / 100
@@ -117,8 +119,8 @@ const stageConfig = computed(() => {
   return {
     width: containerWidth,
     height: containerHeight,
-    x: (containerWidth - PAGE_WIDTH * scale) / 2,
-    y: (containerHeight - PAGE_HEIGHT * scale) / 2,
+    x: (containerWidth - PAGE_WIDTH * scale) / 2 + stageOffset.value.x,
+    y: (containerHeight - PAGE_HEIGHT * scale) / 2 + stageOffset.value.y,
     scaleX: scale,
     scaleY: scale,
   }
@@ -161,8 +163,21 @@ const colorPreview = computed(
     TEXT_FILL,
 )
 
+const cursor = computed(() => (isPanning.value ? 'grabbing' : space.value ? 'grab' : 'default'))
+
+const space = ref(false)
 const meta = useKeyModifier('Meta')
 const shift = useKeyModifier('Shift')
+
+onMounted(() => {
+  window.addEventListener('keydown', handleSpaceDown)
+  window.addEventListener('keyup', handleSpaceUp)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleSpaceDown)
+  window.removeEventListener('keyup', handleSpaceUp)
+})
 
 watch(selectedIds, () => {
   if (!transformerRef.value) return
@@ -214,10 +229,15 @@ const handleStageClick = (event: KonvaEventObject<MouseEvent>) => {
 }
 
 const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
-  if (event.target !== event.target.getStage() && event.target.attrs.id !== PAGE_ID) return
-  isSelecting.value = true
   const stage = event.target.getStage()
   if (!stage) return
+  if (space.value) {
+    isPanning.value = true
+    const pointerPosition = stage.getPointerPosition()
+    if (pointerPosition) return (lastPointerPosition.value = { ...pointerPosition })
+  }
+  if (event.target !== stage && event.target.attrs.id !== PAGE_ID) return
+  isSelecting.value = true
   const position = stage.getRelativePointerPosition()
   if (!position) return
   selectionRectangle.visible = true
@@ -228,9 +248,16 @@ const handleMouseDown = (event: KonvaEventObject<MouseEvent>) => {
 }
 
 const handleMouseMove = (event: KonvaEventObject<MouseEvent>) => {
-  if (!isSelecting.value) return
   const stage = event.target.getStage()
   if (!stage) return
+  if (space.value && isPanning.value) {
+    const pointerPosition = stage.getPointerPosition()
+    if (!pointerPosition || !lastPointerPosition.value) return
+    stageOffset.value.x += pointerPosition.x - lastPointerPosition.value.x
+    stageOffset.value.y += pointerPosition.y - lastPointerPosition.value.y
+    return (lastPointerPosition.value = pointerPosition)
+  }
+  if (!isSelecting.value) return
   const position = stage.getRelativePointerPosition()
   if (!position) return
   selectionRectangle.x2 = position.x
@@ -238,6 +265,10 @@ const handleMouseMove = (event: KonvaEventObject<MouseEvent>) => {
 }
 
 const handleMouseUp = () => {
+  if (isPanning.value) {
+    isPanning.value = false
+    return (lastPointerPosition.value = null)
+  }
   if (!isSelecting.value) return
   isSelecting.value = false
   setTimeout(() => (selectionRectangle.visible = false))
@@ -434,6 +465,20 @@ const handleZoomOut = () => {
   if (zoomLevel.value <= MIN_ZOOM_LEVEL) return
   zoomLevel.value -= ZOOM_LEVEL_STEP
 }
+
+const handleSpaceDown = (event: KeyboardEvent) => {
+  if (event.code !== 'Space') return
+  event.preventDefault()
+  space.value = true
+}
+
+const handleSpaceUp = (event: KeyboardEvent) => {
+  if (event.code !== 'Space') return
+  event.preventDefault()
+  space.value = false
+  isPanning.value = false
+  lastPointerPosition.value = null
+}
 </script>
 
 <template>
@@ -503,6 +548,7 @@ const handleZoomOut = () => {
 
       <v-stage
         ref="stageRef"
+        :style="{ cursor }"
         :config="stageConfig"
         @click="handleStageClick"
         @mousedown="handleMouseDown"

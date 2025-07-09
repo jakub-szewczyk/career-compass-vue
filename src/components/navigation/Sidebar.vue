@@ -20,7 +20,7 @@ import {
   LogOut,
   PanelLeftClose,
   Settings2,
-  TextCursor,
+  PenTool,
 } from 'lucide-vue-next'
 import { Button } from '../ui/button'
 import { useRoute, useRouter, type RouteRecordNameGeneric } from 'vue-router'
@@ -124,7 +124,7 @@ const isSettingsRouteActive = computed(() =>
                   :class="cn(!isResumesRouteActive && '!text-slate-500')"
                   :to="ROUTES.RESUMES.path"
                 >
-                  <TextCursor class="!size-5" />
+                  <PenTool class="!size-5" />
                   <span>Resumes</span>
                 </RouterLink>
               </SidebarMenuButton>
