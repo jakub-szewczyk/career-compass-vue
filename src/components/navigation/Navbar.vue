@@ -86,6 +86,31 @@ const initials = computed(() =>
           </BreadcrumbList>
         </Breadcrumb>
       </div>
+      <div v-if="route.name === ROUTES.RESUME_EDITOR.name">
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink :to="ROUTES.RESUMES.path">Resume collection</RouterLink>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <RouterLink
+                  :to="{
+                    name: ROUTES.RESUME_EDITOR.name,
+                    params: {
+                      resumeId: route.params.resumeId,
+                    },
+                  }"
+                  >Resume editor</RouterLink
+                >
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      </div>
     </div>
     <Avatar class="size-10" v-if="isSuccess">
       <AvatarFallback class="bg-slate-200"

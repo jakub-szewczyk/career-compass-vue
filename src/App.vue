@@ -21,6 +21,7 @@ const isSidebarVisible = computed(() =>
     [
       ROUTES.DASHBOARD.name,
       ROUTES.RESUMES.name,
+      ROUTES.RESUME_EDITOR.name,
       ROUTES.INTERVIEWS.name,
       ROUTES.APPLICATIONS.name,
       ROUTES.CREATE_APPLICATION.name,

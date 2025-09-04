@@ -8,6 +8,7 @@ import Dashboard from '@/views/dashboard/Dashboard.vue'
 import Interviews from '@/views/interviews/Interviews.vue'
 import NotFound from '@/views/other/NotFound.vue'
 import Resumes from '@/views/resumes/Resumes.vue'
+import ResumeEditor from '@/views/resumes/ResumeEditor.vue'
 import Settings from '@/views/settings/Settings.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
@@ -29,6 +30,12 @@ export const ROUTES = {
   },
   DASHBOARD: { name: 'Dashboard', path: '/', component: Dashboard, meta: { isPrivate: true } },
   RESUMES: { name: 'Resumes', path: '/resumes', component: Resumes, meta: { isPrivate: true } },
+  RESUME_EDITOR: {
+    name: 'Resume editor',
+    path: '/resumes/:resumeId/editor',
+    component: ResumeEditor,
+    meta: { isPrivate: true },
+  },
   INTERVIEWS: {
     name: 'Interviews',
     path: '/interviews',
